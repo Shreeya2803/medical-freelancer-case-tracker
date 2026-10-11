@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html>
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<style>
+  :root {
+    --bg: #f5f6f8; --card: #fff; --ink: #1c1f24; --muted: #6b7280; --line: #e3e5e9;
+    --accent: #1f4e78; --accent-soft: #e6eef6; --good: #1d7a46; --warn: #b45309; --bad: #b42318;
+    --r: 12px;
+    /* chart colours: categorical slots 1-2, status, ordinal blue ramp */
+    --s1: #2a78d6; --s2: #eb6834;
+    --st-good: #0ca30c; --st-warn: #fab219; --st-crit: #d03b3b; --st-off: #9b9a95;
+    --o1: #86b6ef; --o2: #5598e7; --o3: #256abf; --o4: #184f95;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
+  header { position: sticky; top: 0; z-index: 5; color: #fff;
+    background: linear-gradient(135deg, #0f2a47 0%, #1b3f66 100%);
+    padding: 14px 16px 0; padding-top: max(14px, env(safe-area-inset-top));
+    box-shadow: 0 2px 10px rgba(10, 25, 45, .18); }
+  header .brand { display: flex; align-items: center; gap: 12px; }
+  header .mono { width: 42px; height: 42px; border-radius: 50%; flex: none; display: grid; place-items: center;
+    border: 1.5px solid #c9a96e; color: #e6cf9f; font: 600 15px/1 "Iowan Old Style", "Baskerville", Georgia, serif;
+    letter-spacing: .06em; background: rgba(255,255,255,.04); }
+  header .doc { font: 700 19px/1.2 "Iowan Old Style", "Baskerville", Georgia, "Times New Roman", serif; letter-spacing: .01em; }
+  header .cred { font-size: 11.5px; letter-spacing: .14em; text-transform: uppercase; color: #d9c08a; margin-top: 3px; }
+  header .cred i { font-style: normal; opacity: .6; margin: 0 4px; }
+  header .screen-name { margin-top: 12px; padding: 9px 0 10px; border-top: 1px solid rgba(201, 169, 110, .45); }
+  header #title { font-size: 13px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: rgba(255,255,255,.88); }
+  main { padding: 12px 16px 170px; max-width: 640px; margin: 0 auto; }
+  .screen { display: none; } .screen.on { display: block; }
+
+  /* form */
+  .card { background: var(--card); border-radius: var(--r); padding: 14px; margin-bottom: 12px; border: 1px solid var(--line); }
+  .card h3 { margin: 0 0 10px; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 10px 0 4px; }
+  label .req { color: var(--bad); }
+  input, select, textarea { width: 100%; font-size: 16px; padding: 11px 12px; border: 1px solid var(--line);
+    border-radius: 10px; background: #fff; color: var(--ink); -webkit-appearance: none; appearance: none; }
+  select { background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+    background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%; background-size: 5px 5px; background-repeat: no-repeat; padding-right: 32px; }
+  textarea { min-height: 70px; resize: vertical; }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); border-color: transparent; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 6px; }
+  .seg button, .chips button { padding: 10px 6px; border: 1px solid var(--line); border-radius: 10px; background: #fff;
+    font-size: 15px; color: var(--ink); }
+  .seg button.on, .chips button.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .chips { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .hint { margin-top: 6px; font-size: 13px; color: var(--accent); background: var(--accent-soft);
+    border: 0; border-radius: 8px; padding: 6px 10px; display: none; }
+  .warn { font-size: 13px; color: var(--warn); margin-top: 6px; display: none; }
+  .tgl { display: flex; justify-content: space-between; align-items: center; margin: 14px 0 0; font-size: 15px; color: var(--ink); cursor: pointer; }
+  .tgl input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .tgl .knob { position: relative; width: 50px; height: 30px; border-radius: 15px; background: #cfd3da; transition: background .15s; flex: none; }
+  .tgl .knob::after { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff;
+    box-shadow: 0 1px 2px rgba(0,0,0,.25); transition: left .15s; }
+  .tgl input:checked + .knob { background: var(--good); } .tgl input:checked + .knob::after { left: 23px; }
+  details summary { color: var(--accent); font-size: 15px; padding: 4px 0; cursor: pointer; }
+  .actions { display: grid; gap: 8px; }
+  .btn { width: 100%; padding: 14px; font-size: 16px; font-weight: 600; border-radius: 12px; border: 0; }
+  .btn.primary { background: var(--accent); color: #fff; }
+  .btn.ghost { background: #fff; color: var(--accent); border: 1px solid var(--accent); }
+  .btn.plain { background: transparent; color: var(--muted); }
+  .btn:disabled { opacity: .5; }
+
+  /* records */
+  .filters { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin: 8px 0; }
+  .filters select { font-size: 14px; padding: 9px 26px 9px 10px; }
+  .summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 10px; }
+  .kpi { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
+  .kpi b { display: block; font-size: 16px; } .kpi span { font-size: 12px; color: var(--muted); }
+  .rec { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 12px; margin-bottom: 8px;
+    display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; }
+  .rec .name { font-weight: 600; } .rec .meta { font-size: 13px; color: var(--muted); }
+  .rec .amt { text-align: right; font-weight: 600; } .badge { font-size: 12px; padding: 2px 8px; border-radius: 10px; justify-self: end; }
+  .b-Paid { background: #e3f4ea; color: var(--good); } .b-Pending { background: #fdecea; color: var(--bad); }
+  .b-Partially { background: #fff4e0; color: var(--warn); } .b-Written { background: #eee; color: var(--muted); }
+  .empty { text-align: center; color: var(--muted); padding: 40px 0; }
+  .placeholder { text-align: center; color: var(--muted); padding: 60px 20px; }
+
+  /* dashboard */
+  .dfilters { display: flex; gap: 8px; margin-bottom: 8px; }
+  .dfilters select { flex: 1; font-size: 14px; padding: 9px 26px 9px 10px; }
+  .dfilters button { flex: none; padding: 9px 14px; border: 1px solid var(--line); border-radius: 10px; background: #fff;
+    font-size: 14px; color: var(--accent); font-weight: 600; }
+  #dPanel { display: none; } #dPanel.open { display: block; }
+  #dPanel .tip { font-size: 12px; color: var(--muted); margin: 0 0 4px; }
+  .chiprow { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .chiprow:empty { display: none; }
+  .chip { font-size: 13px; background: var(--accent-soft); color: var(--accent); border-radius: 14px; padding: 5px 10px; border: 0; }
+  .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .tile { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 10px 12px; }
+  .tile b { display: block; font-size: 20px; font-variant-numeric: tabular-nums; }
+  .tile span { font-size: 12px; color: var(--muted); }
+  .tile.tap { cursor: pointer; }
+  .tile.alert span::before { content: "\25CF"; color: var(--st-crit); margin-right: 4px; }
+  .chart h4 { margin: 0 0 2px; font-size: 15px; }
+  .chart .sub { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+  .hrow { display: grid; grid-template-columns: 34% 1fr auto; align-items: center; gap: 8px; padding: 6px 0; }
+  .hrow.tap { cursor: pointer; }
+  .hrow .lb { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hrow .bar { height: 14px; border-radius: 0 4px 4px 0; min-width: 2px; }
+  .hrow .v { font-size: 13px; font-variant-numeric: tabular-nums; text-align: right; }
+  .hrow .v small { display: block; font-size: 11px; color: var(--muted); }
+  .vchart { display: flex; align-items: flex-end; gap: 4px; height: 150px; border-bottom: 1px solid #c9ccd1; }
+  .vgrp { flex: 1; display: flex; align-items: flex-end; justify-content: center; gap: 2px; height: 100%; cursor: pointer; }
+  .vgrp .bar { width: 42%; max-width: 14px; border-radius: 4px 4px 0 0; min-height: 2px; }
+  .vgrp.sel { background: var(--accent-soft); border-radius: 6px 6px 0 0; }
+  .vlabels { display: flex; gap: 4px; margin-top: 4px; } .vlabels span { flex: 1; text-align: center; font-size: 11px; color: var(--muted); }
+  .ymax { font-size: 11px; color: var(--muted); margin-bottom: 2px; }
+  .readout { font-size: 13px; margin-top: 8px; min-height: 18px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; margin-top: 8px; }
+  .legend span { cursor: pointer; } .legend em { font-style: normal; color: var(--muted); }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+  .share { display: flex; gap: 2px; height: 18px; border-radius: 4px; overflow: hidden; }
+  .share div { height: 100%; min-width: 3px; }
+  .seglite { display: flex; gap: 4px; margin-bottom: 8px; }
+  .seglite button { flex: 1; padding: 7px 4px; font-size: 13px; border: 1px solid var(--line); background: #fff; border-radius: 8px; color: var(--ink); }
+  .seglite button.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .drill { display: flex; align-items: center; justify-content: space-between; gap: 8px; background: var(--accent-soft);
+    color: var(--accent); border-radius: 10px; padding: 8px 12px; margin: 8px 0; font-size: 14px; }
+  .drill button { border: 0; background: none; color: var(--accent); font-weight: 600; font-size: 14px; }
+
+  /* records: select + pay */
+  .rtools { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 8px 0 0; min-height: 34px; }
+  .rtools span { font-size: 13px; color: var(--muted); }
+  .rtools .lnk { border: 0; background: none; color: var(--accent); font-weight: 600; font-size: 14px; padding: 6px 0; }
+  .rec.selmode { grid-template-columns: 26px 1fr auto; }
+  .rec.selmode .name, .rec.selmode .meta:not(.r) { grid-column: 2; }
+  .rec .tick { grid-row: 1 / span 3; align-self: center; width: 22px; height: 22px; border-radius: 50%; border: 2px solid #b9bdc4; }
+  .rec.picked { border-color: var(--accent); background: #f3f7fb; }
+  .rec.picked .tick { background: var(--accent); border-color: var(--accent);
+    box-shadow: inset 0 0 0 3px #fff; }
+  .rec .payrow { grid-column: 1 / -1; display: flex; justify-content: flex-end; margin-top: 6px; }
+  .paybtn { border: 1px solid var(--accent); background: #fff; color: var(--accent); border-radius: 8px; padding: 6px 12px;
+    font-size: 14px; font-weight: 600; }
+  #actionBar { position: fixed; left: 0; right: 0; bottom: calc(58px + env(safe-area-inset-bottom)); z-index: 7; background: #fff;
+    border-top: 1px solid var(--line); padding: 10px 16px; display: none; align-items: center; justify-content: space-between; gap: 12px;
+    box-shadow: 0 -4px 12px rgba(0,0,0,.06); }
+  #actionBar.on { display: flex; }
+  #actionBar b { display: block; font-size: 15px; } #actionBar span { font-size: 13px; color: var(--muted); }
+  #actionBar .btn { width: auto; padding: 12px 18px; }
+  .modal { position: fixed; inset: 0; background: rgba(20,24,30,.45); z-index: 15; display: none; align-items: flex-end; }
+  .modal.on { display: flex; }
+  .sheet { background: #fff; width: 100%; border-radius: 16px 16px 0 0; padding: 18px 16px calc(18px + env(safe-area-inset-bottom));
+    max-height: 90vh; overflow: auto; }
+  .sheet h3 { margin: 0 0 4px; font-size: 18px; }
+  .sheet .sum { font-size: 14px; color: var(--muted); margin-bottom: 4px; }
+  .sheet .actions { margin-top: 16px; }
+
+  /* delete, undo, trash, more */
+  .btn.danger { background: #fff; color: var(--bad); border: 1px solid var(--bad); }
+  .btn.dangerfill { background: var(--bad); color: #fff; }
+  #actionBar .btns { display: flex; gap: 8px; }
+  #undoBar { position: fixed; left: 16px; right: 16px; bottom: calc(70px + env(safe-area-inset-bottom)); z-index: 12; background: #1c1f24;
+    color: #fff; border-radius: 10px; padding: 10px 14px; display: none; align-items: center; justify-content: space-between; gap: 10px; font-size: 15px; }
+  #undoBar.on { display: flex; }
+  #undoBar button { border: 0; background: none; color: #8fc1ff; font-weight: 700; font-size: 15px; }
+  .menu { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
+  .menu button { display: flex; justify-content: space-between; width: 100%; padding: 15px 14px; border: 0; border-bottom: 1px solid var(--line);
+    background: #fff; font-size: 16px; color: var(--ink); text-align: left; }
+  .menu button:last-child { border-bottom: 0; }
+  .menu button span { color: var(--muted); }
+  .trow { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 12px; margin-bottom: 8px;
+    display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; }
+  .trow .btns { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
+  .trow .btns button { border-radius: 8px; padding: 6px 12px; font-size: 14px; font-weight: 600; }
+
+  /* tag input (risk notes) */
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; border: 1px solid var(--line); border-radius: 10px;
+    padding: 6px; background: #fff; min-height: 46px; }
+  .tags:focus-within { outline: 2px solid var(--accent); border-color: transparent; }
+  .tag { display: inline-flex; align-items: center; gap: 4px; background: var(--accent-soft); color: var(--accent);
+    border-radius: 14px; padding: 5px 6px 5px 10px; font-size: 14px; }
+  .tag button { border: 0; background: none; color: var(--accent); font-size: 16px; line-height: 1; padding: 0 4px; }
+  .tags input { flex: 1; min-width: 120px; border: 0; padding: 6px; outline: none; }
+  .tags input:focus { outline: none; }
+  .sugg { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .sugg button { border: 1px dashed var(--accent); background: #fff; color: var(--accent); border-radius: 14px; padding: 5px 10px; font-size: 14px; }
+  .sugg button b { font-weight: 700; }
+  .seglite { flex-wrap: wrap; }
+
+  /* nav, toast, loader */
+  nav { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid var(--line);
+    display: grid; grid-template-columns: repeat(4, 1fr); padding-bottom: env(safe-area-inset-bottom); z-index: 6; }
+  nav button { background: none; border: 0; padding: 10px 0 12px; font-size: 12px; color: var(--muted); }
+  nav button .ic { display: block; font-size: 20px; line-height: 1.2; }
+  nav button.on { color: var(--accent); font-weight: 600; }
+  #toast { position: fixed; left: 16px; right: 16px; top: 118px; background: #1c1f24; color: #fff; padding: 12px 14px;
+    border-radius: 10px; font-size: 15px; display: none; z-index: 25; text-align: center; }
+  #toast.err { background: var(--bad); }
+  #loader { position: fixed; inset: 0; background: rgba(245,246,248,.85); display: flex; align-items: center; justify-content: center;
+    z-index: 20; font-size: 15px; color: var(--muted); }
+  #loader.off { display: none; }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <div class="mono" id="mono" aria-hidden="true">CT</div>
+    <div>
+      <div class="doc" id="docName">Case Tracker</div>
+      <div class="cred" id="docCred"></div>
+    </div>
+  </div>
+  <div class="screen-name"><span id="title">Add case</span></div>
+</header>
+
+<main>
+  <!-- ADD / EDIT -->
+  <section id="s-add" class="screen on">
+    <form id="f" autocomplete="off" onsubmit="return false">
+      <div class="card">
+        <h3>Case</h3>
+        <div class="row2">
+          <div><label>Date <span class="req">*</span></label><input type="date" id="date" required></div>
+          <div><label>IP / UHID no.</label><input id="uhid" inputmode="text"></div>
+        </div>
+        <label>Patient name <span class="req">*</span></label><input id="patient" autocapitalize="words">
+        <div class="row2">
+          <div><label>Age (years) <span class="req">*</span></label><input id="age" type="number" inputmode="decimal" min="0" max="120" step="any" placeholder="e.g. 45 or 0.5"></div>
+          <div><label>Gender <span class="req">*</span></label><select id="gender"></select></div>
+        </div>
+        <label>Hospital <span class="req">*</span></label>
+        <select id="hospital"></select>
+        <input id="hospitalNew" placeholder="New hospital name" style="display:none;margin-top:6px">
+        <label>Surgeon <span class="req">*</span></label>
+        <select id="surgeon"></select>
+        <input id="surgeonNew" placeholder="New surgeon name, e.g. Dr. Patil" style="display:none;margin-top:6px">
+        <div class="row2">
+          <div><label>Case type <span class="req">*</span></label><select id="caseType"></select></div>
+          <div><label>Anaesthesia</label><select id="anaesthesia"></select></div>
+        </div>
+        <label>Case description</label>
+        <select id="caseDesc"></select>
+        <input id="caseDescNew" placeholder="New description, e.g. Lap chole" style="display:none;margin-top:6px">
+        <label>Elective / Emergency <span class="req">*</span></label>
+        <select id="urgency"></select>
+        <label>Yojana / Private <span class="req">*</span></label>
+        <div class="seg" id="scheme">
+          <button type="button" data-v="Yojana" onclick="setScheme('Yojana')">Yojana</button>
+          <button type="button" data-v="Private" onclick="setScheme('Private')">Private</button>
+        </div>
+        <label>Risk notes</label>
+        <div class="tags" id="riskBox" onclick="$('riskInput').focus()">
+          <input id="riskInput" placeholder="Type a risk, then tap a suggestion or press return" autocapitalize="sentences" autocomplete="off" enterkeyhint="done">
+        </div>
+        <div class="sugg" id="riskSugg"></div>
+      </div>
+
+      <div class="card">
+        <h3>Fee</h3>
+        <label>Fee charged (₹) <span class="req">*</span></label>
+        <input id="fee" type="number" inputmode="numeric" min="1" step="1">
+        <button type="button" class="hint" id="feeHint"></button>
+        <label class="tgl"><span>Paid already?</span><input type="checkbox" id="paid"><span class="knob"></span></label>
+        <div id="payBox" style="display:none">
+          <div class="row2">
+            <div><label>Amount received (₹)</label><input id="received" type="number" inputmode="numeric" min="0" step="1"></div>
+            <div><label>Payment date</label><input id="payDate" type="date"></div>
+          </div>
+          <div class="warn" id="overWarn">Received is more than the fee. Check the amount.</div>
+          <label>Payment mode <span class="req">*</span></label>
+          <select id="payMode"></select>
+        </div>
+      </div>
+
+      <div class="card">
+        <details id="more">
+          <summary>More details</summary>
+          <div class="row2">
+            <div><label>Duration (min)</label><input id="duration" type="number" inputmode="numeric" min="0"></div>
+            <div><label>Bill / ref no.</label><input id="billNo"></div>
+          </div>
+          <label>Notes</label><textarea id="notes"></textarea>
+        </details>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn primary" id="saveBtn" onclick="save(false)">Save</button>
+        <button type="button" class="btn ghost" id="saveAddBtn" onclick="save(true)">Save &amp; add another</button>
+        <button type="button" class="btn plain" id="cancelBtn" onclick="cancelEdit()" style="display:none">Cancel edit</button>
+        <button type="button" class="btn danger" id="delCaseBtn" onclick="askDelete([S.editId])" style="display:none">Delete this case</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- RECORDS -->
+  <section id="s-records" class="screen">
+    <input id="search" type="search" placeholder="Search patient, UHID, surgeon…" oninput="renderRecords()">
+    <div class="rtools">
+      <span id="selInfo"></span>
+      <span style="display:flex;gap:14px">
+        <button class="lnk" id="selAllBtn" onclick="selectAll()" style="display:none">Select all</button>
+        <button class="lnk" id="expBtn" onclick="exportView()">Export</button>
+        <button class="lnk" id="selBtn" onclick="toggleSelect()">Select</button>
+      </span>
+    </div>
+    <div class="drill" id="drillBar" style="display:none"><span id="drillLabel"></span><button onclick="clearDrill()">Clear ✕</button></div>
+    <div class="filters" id="recFilters">
+      <select id="fPeriod" onchange="renderRecords()">
+        <option value="thisMonth">This month</option>
+        <option value="lastMonth">Last month</option>
+        <option value="thisFY" selected>This FY</option>
+        <option value="lastFY">Last FY</option>
+        <option value="all">All time</option>
+      </select>
+      <select id="fHospital" onchange="renderRecords()"></select>
+      <select id="fStatus" onchange="renderRecords()"></select>
+    </div>
+    <div class="summary">
+      <div class="kpi"><b id="kCases">0</b><span>Cases</span></div>
+      <div class="kpi"><b id="kBilled">₹0</b><span>Billed</span></div>
+      <div class="kpi"><b id="kOut">₹0</b><span>Outstanding</span></div>
+    </div>
+    <div id="list"></div>
+  </section>
+
+  <section id="s-dash" class="screen">
+    <div class="dfilters">
+      <select id="dPeriod" onchange="dPeriodChange()">
+        <option value="thisMonth">This month</option>
+        <option value="lastMonth">Last month</option>
+        <option value="thisFY" selected>This FY</option>
+        <option value="lastFY">Last FY</option>
+        <option value="all">All time</option>
+        <option value="custom">Custom dates…</option>
+      </select>
+      <button id="dMoreBtn" onclick="$('dPanel').classList.toggle('open')">Filters</button>
+    </div>
+    <div id="dCustom" class="row2" style="display:none;margin-bottom:8px">
+      <div><label>From</label><input type="date" id="dFrom" onchange="renderDash()"></div>
+      <div><label>To</label><input type="date" id="dTo" onchange="renderDash()"></div>
+    </div>
+    <div id="dPanel" class="card">
+      <p class="tip">Pick one or more in each. Leave blank for all.</p>
+      <label>Hospital</label><select id="dHospital" multiple onchange="renderDash()"></select>
+      <label>Case type</label><select id="dCaseType" multiple onchange="renderDash()"></select>
+      <label>Surgeon</label><select id="dSurgeon" multiple onchange="renderDash()"></select>
+      <label>Payment status</label><select id="dStatus" multiple onchange="renderDash()"></select>
+      <label>Payment mode</label><select id="dPayMode" multiple onchange="renderDash()"></select>
+      <label>Elective / Emergency</label><select id="dUrgency" multiple onchange="renderDash()"></select>
+      <label>Gender</label><select id="dGender" multiple onchange="renderDash()"></select>
+      <label>Yojana / Private</label><select id="dScheme" multiple onchange="renderDash()"></select>
+      <div class="actions" style="margin-top:12px">
+        <button class="btn ghost" onclick="$('dPanel').classList.remove('open')">Done</button>
+        <button class="btn plain" onclick="resetDash()">Reset all filters</button>
+      </div>
+    </div>
+    <div class="chiprow" id="dChips"></div>
+    <div class="tiles" id="dTiles"></div>
+    <div id="dCharts"></div>
+  </section>
+  <section id="s-more" class="screen">
+    <div class="menu">
+      <button onclick="openLists()">Manage lists <span>›</span></button>
+      <button onclick="openTrash()">Trash <span id="trashCount">›</span></button>
+      <button onclick="doBackup()">Back up now <span id="backupInfo">›</span></button>
+      <button onclick="load()">Refresh data <span>↻</span></button>
+    </div>
+    <p style="font-size:13px;color:var(--muted);margin:12px 4px">To export cases to Excel: Records → filter → <b>Export</b>.
+      A full backup of everything is also saved automatically on the 1st of each month.</p>
+  </section>
+
+  <section id="s-lists" class="screen">
+    <div class="rtools" style="margin:0 0 8px"><button class="lnk" onclick="nav('more')">‹ Back</button><span></span></div>
+    <div class="seglite" id="listTabs">
+      <button data-l="hospitals" class="on" onclick="pickList('hospitals')">Hospitals</button>
+      <button data-l="surgeons" onclick="pickList('surgeons')">Surgeons</button>
+      <button data-l="caseTypes" onclick="pickList('caseTypes')">Case types</button>
+      <button data-l="caseDescs" onclick="pickList('caseDescs')">Descriptions</button>
+      <button data-l="riskNotes" onclick="pickList('riskNotes')">Risk notes</button>
+    </div>
+    <div class="card" style="display:flex;gap:8px;padding:10px">
+      <input id="listNew" placeholder="Add a new name">
+      <button class="btn primary" style="width:auto;padding:0 16px" onclick="addListItem()">Add</button>
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin:0 4px 8px">Removing a name only hides it from the dropdowns. Existing cases keep it.</p>
+    <div class="menu" id="listItems"></div>
+  </section>
+
+  <section id="s-trash" class="screen">
+    <p class="sub" id="trashNote" style="font-size:13px;color:var(--muted);margin:4px 0 10px"></p>
+    <div class="rtools" style="margin:0 0 8px">
+      <button class="lnk" onclick="nav('more')">‹ Back</button>
+      <span style="display:flex;gap:14px">
+        <button class="lnk" id="restoreAllBtn" onclick="restoreTrash(TRASH.map(t => t.id))">Restore all</button>
+        <button class="lnk" style="color:var(--bad)" id="emptyBtn" onclick="emptyTrash()">Empty Trash</button>
+      </span>
+    </div>
+    <div id="trashList"></div>
+  </section>
+</main>
+
+<nav>
+  <button data-s="dash" onclick="nav('dash')"><span class="ic">▤</span>Dashboard</button>
+  <button data-s="add" class="on" onclick="nav('add')"><span class="ic">＋</span>Add</button>
+  <button data-s="records" onclick="nav('records')"><span class="ic">☰</span>Records</button>
+  <button data-s="more" onclick="nav('more')"><span class="ic">⋯</span>More</button>
+</nav>
+
+<div id="actionBar">
+  <div><b id="abCount"></b><span id="abDue"></span></div>
+  <div class="btns">
+    <button class="btn danger" onclick="askDelete([...SEL])">Delete</button>
+    <button class="btn primary" onclick="openPay([...SEL])">Mark paid</button>
+  </div>
+</div>
+
+<div class="modal" id="delModal" onclick="if (event.target === this) closeDel()">
+  <div class="sheet">
+    <h3 id="delTitle">Delete cases?</h3>
+    <div class="sum" id="delSum"></div>
+    <div id="delTypeBox" style="display:none">
+      <label>Type DELETE to confirm</label>
+      <input id="delType" autocapitalize="characters" autocomplete="off" placeholder="DELETE">
+    </div>
+    <div class="actions">
+      <button class="btn dangerfill" id="delGo" onclick="confirmDelete()">Delete</button>
+      <button class="btn plain" onclick="closeDel()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="cfModal" onclick="if (event.target === this) closeCf()">
+  <div class="sheet">
+    <h3 id="cfTitle"></h3>
+    <div class="sum" id="cfSum"></div>
+    <div class="actions">
+      <button class="btn dangerfill" id="cfGo" onclick="runCf()"></button>
+      <button class="btn plain" onclick="closeCf()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="fileModal" onclick="if (event.target === this) this.classList.remove('on')">
+  <div class="sheet">
+    <h3 id="fileTitle">File ready</h3>
+    <div class="sum" id="fileSum"></div>
+    <div class="actions">
+      <a class="btn primary" id="fileLink" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none">Open in Google Drive</a>
+      <button class="btn plain" onclick="$('fileModal').classList.remove('on')">Close</button>
+    </div>
+  </div>
+</div>
+
+<div id="undoBar"><span id="undoText"></span><button onclick="undoDelete()">Undo</button></div>
+
+<div class="modal" id="payModal" onclick="if (event.target === this) closePay()">
+  <div class="sheet">
+    <h3 id="payTitle">Mark paid</h3>
+    <div class="sum" id="paySum"></div>
+    <div id="payAmtBox">
+      <label>Amount received now (₹)</label>
+      <input id="payAmt" type="number" inputmode="numeric" min="1" step="1">
+      <div class="warn" id="payWarn"></div>
+    </div>
+    <div class="row2">
+      <div><label>Payment date</label><input id="payDt" type="date"></div>
+      <div><label>Payment mode</label><select id="payMd"></select></div>
+    </div>
+    <div class="actions">
+      <button class="btn primary" id="payGo" onclick="confirmPay()">Confirm</button>
+      <button class="btn plain" onclick="closePay()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<div id="loader">Loading…</div>
+
+<script>
+const S = { lists: {}, records: [], lastHospital: '', fyStartMonth: 4, ageing: [30, 60, 90], overdueDays: 60, editId: null };
+const NEW = '__new__';
+const $ = id => document.getElementById(id);
+
+/* ---------- utils ---------- */
+const inr = n => '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN');
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const pad = n => String(n).padStart(2, '0');
+const iso = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+const today = () => iso(new Date());
+const nice = s => { if (!s) return ''; const [y, m, d] = s.split('-'); return d + ' ' + ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m - 1] + ' ' + y; };
+
+function toast(msg, isErr) {
+  const t = $('toast'); t.textContent = msg; t.className = isErr ? 'err' : ''; t.style.display = 'block';
+  clearTimeout(toast.t); toast.t = setTimeout(() => t.style.display = 'none', isErr ? 4500 : 2500);
+}
+function busy(on, msg) { $('loader').textContent = msg || 'Loading…'; $('loader').classList.toggle('off', !on); }
+function call(fn, ...args) {
+  return new Promise((ok, bad) => google.script.run.withSuccessHandler(ok).withFailureHandler(bad)[fn](...args));
+}
+
+/* ---------- header (name + credentials come from the Settings tab) ---------- */
+function setBrand(name, cred) {
+  $('docName').textContent = name || 'Case Tracker';
+  // "MBBS, MD · Anaesthesiologist" → the dot gets the softer style
+  $('docCred').innerHTML = esc(cred || '').replace(/\s*·\s*/g, ' <i>·</i> ');
+  const words = (name || 'Case Tracker').replace(/^(dr\.?|prof\.?)\s+/i, '').split(/\s+/).filter(w => /^[A-Za-z]/.test(w));
+  $('mono').textContent = ((words[0] || 'C')[0] + (words.length > 1 ? words[words.length - 1][0] : '')).toUpperCase();
+  document.title = name ? name + ' · Cases' : 'Case Tracker';
+}
+
+/* ---------- data ---------- */
+function apply(d) {
+  S.lists = d.lists; S.records = d.records; S.lastHospital = d.lastHospital; S.fyStartMonth = d.fyStartMonth || 4;
+  if (d.ageing) S.ageing = d.ageing;
+  if (d.overdueDays) S.overdueDays = d.overdueDays;
+  setBrand(d.doctorName, d.credentials);
+  S.bulkConfirm = d.bulkConfirm || 20; S.undoSeconds = d.undoSeconds || 10; S.trashDays = d.trashDays || 30;
+  fillSelects(); fillDashSelects(); renderRecords(); renderDash();
+}
+async function load() {
+  busy(true);
+  try { apply(await call('getInitData')); if (!S.editId) resetForm(false); }
+  catch (e) { toast(e.message || String(e), true); }
+  finally { busy(false); }
+}
+
+/* ---------- selects, segments, chips ---------- */
+function opts(sel, items, { placeholder, addNew, all } = {}) {
+  const keep = sel.value;
+  let h = '';
+  if (all) h += `<option value="">${esc(all)}</option>`;
+  if (placeholder) h += `<option value="" disabled>${esc(placeholder)}</option>`;
+  h += items.map(v => `<option>${esc(v)}</option>`).join('');
+  if (addNew) h += `<option value="${NEW}">+ Add new…</option>`;
+  sel.innerHTML = h;
+  if (keep && [...sel.options].some(o => o.value === keep)) sel.value = keep;
+}
+function fillSelects() {
+  const L = S.lists;
+  opts($('hospital'), L.hospitals, { placeholder: 'Select hospital', addNew: true });
+  opts($('surgeon'), L.surgeons, { placeholder: 'Select surgeon', addNew: true });
+  opts($('caseType'), L.caseTypes, { placeholder: 'Select' });
+  opts($('anaesthesia'), L.anaesthesia, { all: '—' });
+  opts($('fHospital'), L.hospitals, { all: 'All hospitals' });
+  opts($('fStatus'), L.statuses, { all: 'All statuses' });
+  opts($('urgency'), L.urgency.length ? L.urgency : ['Elective', 'Emergency']);
+  opts($('gender'), L.genders && L.genders.length ? L.genders : ['Male', 'Female', 'Other'], { all: 'Select' });
+  opts($('caseDesc'), L.caseDescs || [], { all: '—', addNew: true });
+  opts($('payMode'), L.payModes.length ? L.payModes : ['Cash', 'UPI', 'NEFT/RTGS transfer', 'Cheque'], { all: 'Select' });
+}
+
+['hospital', 'surgeon', 'caseDesc'].forEach(id => $(id).addEventListener('change', () => {
+  const isNew = $(id).value === NEW;
+  $(id + 'New').style.display = isNew ? 'block' : 'none';
+  if (isNew) $(id + 'New').focus();
+  feeHint();
+}));
+$('caseType').addEventListener('change', feeHint);
+$('fee').addEventListener('input', overWarn);
+$('received').addEventListener('input', overWarn);
+$('paid').addEventListener('change', () => {
+  const on = $('paid').checked;
+  $('payBox').style.display = on ? 'block' : 'none';
+  if (on) {
+    if (!$('received').value) $('received').value = $('fee').value;
+    if (!$('payDate').value) $('payDate').value = today();
+  }
+  overWarn();
+});
+function overWarn() {
+  const f = Number($('fee').value) || 0, r = Number($('received').value) || 0;
+  $('overWarn').style.display = $('paid').checked && f > 0 && r > f ? 'block' : 'none';
+}
+
+/* Suggest the last fee charged for the same hospital + case type */
+function feeHint() {
+  const h = $('hospital').value, c = $('caseType').value, btn = $('feeHint');
+  btn.style.display = 'none';
+  if (!h || h === NEW || !c) return;
+  const last = S.records.filter(r => r.hospital === h && r.caseType === c && r.id !== S.editId)
+    .sort((a, b) => b.date.localeCompare(a.date))[0];
+  if (!last) return;
+  btn.textContent = `Last ${c} at ${h}: ${inr(last.fee)} — tap to use`;
+  btn.dataset.fee = last.fee;
+  btn.style.display = 'block';
+}
+$('feeHint').addEventListener('click', () => { $('fee').value = $('feeHint').dataset.fee; overWarn(); });
+
+
+/* ---------- scheme + risk notes ---------- */
+let SCHEME = 'Private', RISKS = [];
+function setScheme(v) {
+  SCHEME = v;
+  [...$('scheme').children].forEach(b => b.classList.toggle('on', b.dataset.v === v));
+}
+function renderRisks() {
+  $('riskBox').querySelectorAll('.tag').forEach(t => t.remove());
+  RISKS.forEach((r, i) => {
+    const t = document.createElement('span');
+    t.className = 'tag';
+    t.innerHTML = `${esc(r)}<button type="button" aria-label="Remove ${esc(r)}" onclick="event.stopPropagation();removeRisk(${i})">×</button>`;
+    $('riskBox').insertBefore(t, $('riskInput'));
+  });
+  suggestRisks();
+}
+function addRisk(v) {
+  v = String(v || '').replace(/;/g, ',').trim();
+  if (!v) return;
+  // reuse the vocabulary's spelling when it matches ignoring case
+  const known = (S.lists.riskNotes || []).find(x => x.toLowerCase() === v.toLowerCase());
+  if (known) v = known;
+  if (!RISKS.some(x => x.toLowerCase() === v.toLowerCase())) RISKS.push(v);
+  $('riskInput').value = '';
+  renderRisks();
+}
+function removeRisk(i) { RISKS.splice(i, 1); renderRisks(); }
+// Called on save: a half-typed note still counts
+function commitRiskInput() { if ($('riskInput').value.trim()) addRisk($('riskInput').value); return RISKS.slice(); }
+
+function suggestRisks() {
+  const q = $('riskInput').value.trim().toLowerCase();
+  const box = $('riskSugg');
+  if (!q) { box.innerHTML = ''; return; }
+  const taken = new Set(RISKS.map(x => x.toLowerCase()));
+  const hits = (S.lists.riskNotes || []).filter(x => !taken.has(x.toLowerCase()) && x.toLowerCase().includes(q))
+    .sort((a, b) => a.toLowerCase().indexOf(q) - b.toLowerCase().indexOf(q) || a.localeCompare(b)).slice(0, 8);
+  const exact = hits.some(x => x.toLowerCase() === q);
+  const mark = x => { const i = x.toLowerCase().indexOf(q); return esc(x.slice(0, i)) + '<b>' + esc(x.slice(i, i + q.length)) + '</b>' + esc(x.slice(i + q.length)); };
+  box.innerHTML = hits.map((x, i) => `<button type="button" data-i="${i}">${mark(x)}</button>`).join('') +
+    (exact ? '' : `<button type="button" data-new="1">+ Add "${esc($('riskInput').value.trim())}"</button>`);
+  box.querySelectorAll('button').forEach(b => b.addEventListener('mousedown', e => e.preventDefault()));
+  box.querySelectorAll('button[data-i]').forEach(b => b.addEventListener('click', () => { addRisk(hits[+b.dataset.i]); $('riskInput').focus(); }));
+  const nb = box.querySelector('button[data-new]');
+  if (nb) nb.addEventListener('click', () => { addRisk($('riskInput').value); $('riskInput').focus(); });
+}
+$('riskInput').addEventListener('input', suggestRisks);
+$('riskInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addRisk($('riskInput').value); }
+  else if (e.key === 'Backspace' && !$('riskInput').value && RISKS.length) { RISKS.pop(); renderRisks(); }
+});
+
+/* ---------- form ---------- */
+function pick(id) { return $(id).value === NEW ? $(id + 'New').value.trim() : $(id).value; }
+
+function resetForm(keepHospital) {
+  const hosp = keepHospital ? ($('hospital').value && $('hospital').value !== NEW ? $('hospital').value : S.lastHospital) : S.lastHospital;
+  $('f').reset();
+  S.editId = null;
+  fillSelects();
+  $('urgency').value = 'Elective'; $('payMode').value = ''; $('payDate').value = ''; $('gender').value = '';
+  $('date').value = today();
+  $('date').max = today();
+  $('hospital').value = S.lists.hospitals.includes(hosp) ? hosp : '';
+  $('surgeon').value = ''; $('caseType').value = '';
+  ['hospitalNew', 'surgeonNew', 'caseDescNew'].forEach(i => { $(i).value = ''; $(i).style.display = 'none'; });
+  $('caseDesc').value = ''; setScheme('Private'); RISKS = []; renderRisks();
+  $('payBox').style.display = 'none'; $('more').open = false;
+  $('saveAddBtn').style.display = ''; $('cancelBtn').style.display = 'none'; $('delCaseBtn').style.display = 'none';
+  $('saveBtn').textContent = 'Save';
+  overWarn(); feeHint();
+  if (currentScreen === 'add') setTitle('Add case');
+}
+
+function readForm() {
+  const paid = $('paid').checked;
+  return {
+    id: S.editId,
+    date: $('date').value,
+    patient: $('patient').value.trim(),
+    age: $('age').value,
+    gender: $('gender').value,
+    uhid: $('uhid').value.trim(),
+    hospital: pick('hospital'),
+    surgeon: pick('surgeon'),
+    caseType: $('caseType').value,
+    caseDesc: pick('caseDesc'),
+    scheme: SCHEME,
+    riskNotes: commitRiskInput(),
+    anaesthesia: $('anaesthesia').value,
+    urgency: $('urgency').value,
+    duration: $('duration').value,
+    fee: $('fee').value,
+    paid,
+    received: paid ? $('received').value : 0,
+    payDate: paid ? $('payDate').value : '',
+    payMode: paid ? $('payMode').value : '',
+    billNo: $('billNo').value.trim(),
+    notes: $('notes').value.trim()
+  };
+}
+
+function checkForm(c) {
+  const miss = [];
+  if (!c.date) miss.push('date');
+  if (!c.patient) miss.push('patient name');
+  if (c.age === '') miss.push('age');
+  if (!c.gender) miss.push('gender');
+  if (!c.scheme) miss.push('Yojana / Private');
+  if (!c.hospital) miss.push('hospital');
+  if (!c.surgeon) miss.push('surgeon');
+  if (!c.caseType) miss.push('case type');
+  if (!(Number(c.fee) > 0)) miss.push('fee');
+  if (miss.length) return 'Please fill: ' + miss.join(', ');
+  if (c.date > today()) return 'Date cannot be in the future';
+  if (!(Number(c.age) >= 0 && Number(c.age) <= 120)) return 'Age must be between 0 and 120';
+  if (Number(c.received) > 0 && !c.payMode) return 'Pick a payment mode';
+  if (c.paid && !(Number(c.received) > 0)) return 'Enter the amount received, or turn off Paid already';
+  if (Number(c.received) > 0 && !c.payDate) return 'Pick a payment date';
+  return '';
+}
+
+async function save(another) {
+  const c = readForm();
+  const err = checkForm(c);
+  if (err) return toast(err, true);
+  const editing = !!S.editId;
+  ['saveBtn', 'saveAddBtn'].forEach(i => $(i).disabled = true);
+  busy(true, 'Saving…');
+  try {
+    const d = await call('saveCase', c);
+    apply(d);
+    toast((editing ? 'Updated ' : 'Saved ') + d.savedId);
+    resetForm(true);
+    if (editing || !another) go('records');
+  } catch (e) {
+    toast(e.message || String(e), true);
+  } finally {
+    busy(false);
+    ['saveBtn', 'saveAddBtn'].forEach(i => $(i).disabled = false);
+  }
+}
+
+function edit(id) {
+  const r = S.records.find(x => x.id === id);
+  if (!r) return;
+  resetForm(false);
+  S.editId = id;
+  $('date').value = r.date; $('patient').value = r.patient; $('uhid').value = r.uhid;
+  $('age').value = r.age === '' || r.age == null ? '' : r.age; $('gender').value = r.gender || '';
+  setOrNew('hospital', r.hospital); setOrNew('surgeon', r.surgeon);
+  $('caseType').value = r.caseType; $('anaesthesia').value = r.anaesthesia;
+  if (r.caseDesc) setOrNew('caseDesc', r.caseDesc); else $('caseDesc').value = '';
+  setScheme(r.scheme || 'Private');
+  RISKS = (r.riskNotes || []).slice(); renderRisks();
+  $('urgency').value = r.urgency || 'Elective';
+  $('fee').value = r.fee;
+  const paid = r.received > 0;
+  $('paid').checked = paid; $('payBox').style.display = paid ? 'block' : 'none';
+  $('received').value = paid ? r.received : ''; $('payDate').value = r.payDate;
+  $('payMode').value = r.payMode || '';
+  $('duration').value = r.duration; $('billNo').value = r.billNo; $('notes').value = r.notes;
+  $('more').open = !!(r.duration || r.billNo || r.notes);
+  $('saveAddBtn').style.display = 'none'; $('cancelBtn').style.display = ''; $('delCaseBtn').style.display = '';
+  $('saveBtn').textContent = 'Save changes';
+  overWarn(); feeHint();
+  go('add', 'Edit ' + id);
+}
+function setOrNew(id, v) {
+  if ([...$(id).options].some(o => o.value === v)) { $(id).value = v; }
+  else { $(id).value = NEW; $(id + 'New').value = v; $(id + 'New').style.display = 'block'; }
+}
+function cancelEdit() { resetForm(false); go('records'); }
+
+/* ---------- records ---------- */
+function periodRange(p) {
+  const n = new Date(), y = n.getFullYear(), m = n.getMonth();
+  const fyStartYear = m + 1 >= S.fyStartMonth ? y : y - 1;
+  const fy = sy => [iso(new Date(sy, S.fyStartMonth - 1, 1)), iso(new Date(sy + 1, S.fyStartMonth - 1, 0))];
+  switch (p) {
+    case 'thisMonth': return [iso(new Date(y, m, 1)), iso(new Date(y, m + 1, 0))];
+    case 'lastMonth': return [iso(new Date(y, m - 1, 1)), iso(new Date(y, m, 0))];
+    case 'thisFY': return fy(fyStartYear);
+    case 'lastFY': return fy(fyStartYear - 1);
+    default: return ['0000-01-01', '9999-12-31'];
+  }
+}
+
+function renderRecords() {
+  const q = $('search').value.trim().toLowerCase();
+  const [from, to] = periodRange($('fPeriod').value);
+  const h = $('fHospital').value, st = $('fStatus').value;
+  $('drillBar').style.display = DRILL ? 'flex' : 'none';
+  $('recFilters').style.display = DRILL ? 'none' : '';
+  if (DRILL) $('drillLabel').textContent = DRILL.label;
+  const base = DRILL
+    ? S.records.filter(r => DRILL.ids.has(r.id))
+    : S.records.filter(r => r.date >= from && r.date <= to)
+        .filter(r => !h || r.hospital === h)
+        .filter(r => !st || r.status === st);
+  const rows = base
+    .filter(r => !q || [r.patient, r.uhid, r.surgeon, r.hospital, r.id, r.billNo, r.caseDesc, (r.riskNotes || []).join(' ')].join(' ').toLowerCase().includes(q))
+    .sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
+
+  $('kCases').textContent = rows.length;
+  $('kBilled').textContent = inr(rows.reduce((s, r) => s + r.fee, 0));
+  $('kOut').textContent = inr(rows.filter(r => r.status !== 'Written off').reduce((s, r) => s + Math.max(r.balance, 0), 0));
+
+  VIEW = rows;
+  const open = r => r.balance > 0 && r.status !== 'Written off';
+  $('list').innerHTML = rows.length ? rows.map(r => `
+    <div class="rec ${SEL_MODE ? 'selmode' : ''} ${SEL.has(r.id) ? 'picked' : ''}" onclick="cardTap('${esc(r.id)}')">
+      ${SEL_MODE ? '<div class="tick"></div>' : ''}
+      <div class="name">${esc(r.patient)}${ageSex(r) ? `<span style="font-weight:400;color:var(--muted)"> · ${esc(ageSex(r))}</span>` : ''}</div>
+      <div class="amt">${inr(r.fee)}</div>
+      <div class="meta">${nice(r.date)} · ${esc(r.hospital)}</div>
+      <span class="badge b-${esc(String(r.status).split(' ')[0])}">${esc(r.status)}</span>
+      <div class="meta">${esc(r.caseType)}${r.caseDesc ? ' – ' + esc(r.caseDesc) : ''} · ${esc(r.surgeon)}${r.scheme === 'Yojana' ? ' · <b style="color:var(--accent);font-weight:600">Yojana</b>' : ''}</div>
+      <div class="meta r" style="text-align:right">${open(r) ? 'Due ' + inr(r.balance) : esc(r.id)}</div>
+      ${!SEL_MODE && open(r) ? `<div class="payrow"><button class="paybtn" onclick="event.stopPropagation();openPay(['${esc(r.id)}'])">Mark paid</button></div>` : ''}
+    </div>`).join('') : '<div class="empty">No cases match these filters.</div>';
+  updateSelUI();
+}
+
+
+/* ---------- dashboard ---------- */
+let DRILL = null;      // { label, ids } set when a chart is tapped
+let EARN_BY = 'hospital';
+const DIMS = [['dHospital', 'hospital', 'Hospital'], ['dCaseType', 'caseType', 'Case type'], ['dSurgeon', 'surgeon', 'Surgeon'],
+  ['dStatus', 'status', 'Status'], ['dPayMode', 'payMode', 'Mode'], ['dUrgency', 'urgency', ''], ['dGender', 'gender', ''], ['dScheme', 'scheme', '']];
+const STATUS_COLOR = { 'Paid': 'var(--st-good)', 'Partially paid': 'var(--st-warn)', 'Pending': 'var(--st-crit)', 'Written off': 'var(--st-off)' };
+const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const sel = id => [...$(id).selectedOptions].map(o => o.value);
+const sum = (a, f) => a.reduce((s, r) => s + f(r), 0);
+const isOpen = r => r.status !== 'Written off' && r.balance > 0;
+const age = r => Math.floor((Date.parse(today()) - Date.parse(r.date)) / 864e5);
+const pct = n => (Math.round(n * 1000) / 10) + '%';
+
+function fillDashSelects() {
+  const L = S.lists;
+  const src = { dHospital: L.hospitals, dCaseType: L.caseTypes, dSurgeon: L.surgeons, dStatus: L.statuses,
+    dPayMode: L.payModes, dUrgency: L.urgency.length ? L.urgency : ['Elective', 'Emergency'],
+    dGender: L.genders && L.genders.length ? L.genders : ['Male', 'Female', 'Other'],
+    dScheme: L.schemes && L.schemes.length ? L.schemes : ['Private', 'Yojana'] };
+  Object.entries(src).forEach(([id, items]) => {
+    const keep = sel(id);
+    // include values used in records but missing from Lists, so nothing is unfilterable
+    const field = DIMS.find(d => d[0] === id)[1];
+    const all = [...new Set([...items, ...S.records.map(r => r[field]).filter(Boolean)])];
+    $(id).innerHTML = all.map(v => `<option${keep.includes(v) ? ' selected' : ''}>${esc(v)}</option>`).join('');
+  });
+}
+
+function dPeriodChange() {
+  $('dCustom').style.display = $('dPeriod').value === 'custom' ? 'grid' : 'none';
+  renderDash();
+}
+function dashRange() {
+  return $('dPeriod').value === 'custom'
+    ? [$('dFrom').value || '0000-01-01', $('dTo').value || '9999-12-31']
+    : periodRange($('dPeriod').value);
+}
+function dashRows() {
+  const [f, t] = dashRange();
+  const F = DIMS.map(([id, field]) => [field, sel(id)]);
+  return S.records.filter(r => r.date >= f && r.date <= t && F.every(([k, v]) => !v.length || v.includes(r[k])));
+}
+function resetDash() {
+  DIMS.forEach(([id]) => [...$(id).options].forEach(o => o.selected = false));
+  $('dPeriod').value = 'thisFY'; dPeriodChange();
+}
+function clearDim(id) { [...$(id).options].forEach(o => o.selected = false); renderDash(); }
+function periodText() {
+  if ($('dPeriod').value !== 'custom') return $('dPeriod').selectedOptions[0].text;
+  return (nice($('dFrom').value) || 'start') + ' to ' + (nice($('dTo').value) || 'today');
+}
+
+/* Tap on a chart → Records showing exactly those cases */
+function drillTo(label, test) {
+  DRILL = { label: label + ' · ' + periodText(), ids: new Set(dashRows().filter(test).map(r => r.id)) };
+  $('search').value = '';
+  go('records'); renderRecords();
+}
+function clearDrill() { DRILL = null; renderRecords(); }
+function nav(s) { if (s === 'more') loadBackupInfo(); if (s === 'records') DRILL = null; if (SEL_MODE) { SEL_MODE = false; SEL.clear(); } go(s); if (s === 'records') renderRecords(); if (s === 'dash') renderDash(); }
+
+const DRILLS = [];   // drill callbacks for the current render, referenced by index from onclick
+function dr(label, test) { DRILLS.push([label, test]); return `onclick="drillTo(...DRILLS[${DRILLS.length - 1}])"`; }
+
+function group(rows, key, val) {
+  const m = new Map();
+  rows.forEach(r => m.set(r[key] || '—', (m.get(r[key] || '—') || 0) + val(r)));
+  return [...m.entries()].sort((a, b) => b[1] - a[1]);
+}
+// Top N, the rest folded into "Others"
+function topN(entries, n) {
+  if (entries.length <= n) return entries.map(e => ({ label: e[0], value: e[1], key: e[0] }));
+  const top = entries.slice(0, n - 1).map(e => ({ label: e[0], value: e[1], key: e[0] }));
+  const rest = entries.slice(n - 1);
+  top.push({ label: `Others (${rest.length})`, value: rest.reduce((s, e) => s + e[1], 0), keys: rest.map(e => e[0]) });
+  return top;
+}
+
+function hbars(items, color, field, noun) {
+  if (!items.length) return '<div class="sub">Nothing to show.</div>';
+  const max = Math.max(...items.map(i => i.value), 1);
+  return items.map(i => {
+    const keys = i.keys || [i.key];
+    const click = field ? dr(`${noun}: ${i.label}`, r => keys.includes(r[field] || '—')) : '';
+    return `<div class="hrow ${field ? 'tap' : ''}" ${click}>
+      <div class="lb">${esc(i.label)}</div>
+      <div><div class="bar" style="width:${(i.value / max * 100).toFixed(1)}%;background:${i.color || color}"></div></div>
+      <div class="v">${inr(i.value)}${i.note ? `<small>${esc(i.note)}</small>` : ''}</div></div>`;
+  }).join('');
+}
+
+function share(parts) {
+  const total = parts.reduce((s, p) => s + p.count, 0);
+  if (!total) return '<div class="sub">Nothing to show.</div>';
+  return `<div class="share">${parts.filter(p => p.count).map(p =>
+      `<div style="width:${(p.count / total * 100).toFixed(2)}%;background:${p.color}" ${p.click}></div>`).join('')}</div>
+    <div class="legend">${parts.filter(p => p.count).map(p =>
+      `<span ${p.click}><i style="background:${p.color}"></i>${esc(p.label)} ${p.count} <em>· ${pct(p.count / total)} · ${inr(p.amount)}</em></span>`).join('')}</div>`;
+}
+
+function card(title, sub, body) {
+  return `<div class="card chart"><h4>${esc(title)}</h4><div class="sub">${esc(sub)}</div>${body}</div>`;
+}
+
+function renderDash() {
+  if (!$('dTiles')) return;
+  DRILLS.length = 0;
+  const rows = dashRows();
+
+  // active filter chips
+  const chips = DIMS.filter(([id]) => sel(id).length)
+    .map(([id, , name]) => `<button class="chip" onclick="clearDim('${id}')">${esc(name ? name + ': ' : '')}${esc(sel(id).join(', '))} ✕</button>`);
+  $('dChips').innerHTML = chips.join('');
+  const nF = DIMS.filter(([id]) => sel(id).length).length;
+  $('dMoreBtn').textContent = nF ? `Filters (${nF})` : 'Filters';
+
+  // KPI tiles
+  const billed = sum(rows, r => r.fee), collected = sum(rows, r => r.received);
+  const open = rows.filter(isOpen), outstanding = sum(open, r => r.balance);
+  const od = S.overdueDays, overdue = open.filter(r => age(r) > od), overdueAmt = sum(overdue, r => r.balance);
+  $('dTiles').innerHTML = [
+    ['Total billed', inr(billed), ''],
+    ['Collected', inr(collected), ''],
+    ['Outstanding', inr(outstanding), dr('Outstanding', isOpen)],
+    ['Cases', rows.length, ''],
+    ['Avg fee per case', rows.length ? inr(billed / rows.length) : '—', ''],
+    ['Collection rate', billed ? pct(collected / billed) : '—', ''],
+    [`Overdue ${od}+ days (${overdue.length})`, inr(overdueAmt),
+      overdue.length ? dr(`Overdue ${od}+ days`, r => isOpen(r) && age(r) > od) : '', overdueAmt > 0 ? 'alert' : ''],
+    ['Emergency cases', rows.filter(r => r.urgency === 'Emergency').length, '']
+  ].map(([l, v, click, cls]) => `<div class="tile ${click ? 'tap' : ''} ${cls || ''}" ${click}><b>${v}</b><span>${esc(l)}</span></div>`).join('');
+
+  if (!rows.length) {
+    $('dCharts').innerHTML = '<div class="empty">No cases in this period or filter.</div>';
+    return;
+  }
+  const out = [];
+
+  // 1. Monthly billed vs collected (by surgery month, latest 12 months in range)
+  const months = [...new Set(rows.map(r => r.date.slice(0, 7)))].sort().slice(-12);
+  const mData = months.map(m => {
+    const mr = rows.filter(r => r.date.startsWith(m));
+    return { m, billed: sum(mr, r => r.fee), coll: sum(mr, r => r.received), n: mr.length };
+  });
+  const mMax = Math.max(...mData.map(d => d.billed), 1);
+  const multiYear = new Set(months.map(m => m.slice(0, 4))).size > 1;
+  window._mData = mData;
+  out.push(card('Billed vs collected by month', 'By month of surgery. Tap a month for its numbers.', `
+    <div class="ymax">${inr(mMax)}</div>
+    <div class="vchart">${mData.map((d, i) => `
+      <div class="vgrp" data-i="${i}" onclick="pickMonth(${i})">
+        <div class="bar" style="height:${(d.billed / mMax * 100).toFixed(1)}%;background:var(--s1)"></div>
+        <div class="bar" style="height:${(d.coll / mMax * 100).toFixed(1)}%;background:var(--s2)"></div>
+      </div>`).join('')}</div>
+    <div class="vlabels">${mData.map(d => `<span>${MON[+d.m.slice(5) - 1]}${multiYear ? '<br>' + d.m.slice(2, 4) : ''}</span>`).join('')}</div>
+    <div class="legend"><span><i style="background:var(--s1)"></i>Billed <em>${inr(billed)}</em></span>
+      <span><i style="background:var(--s2)"></i>Collected <em>${inr(collected)}</em></span></div>
+    <div class="readout" id="mReadout"></div>`));
+
+  // 2. Outstanding by hospital
+  out.push(card('Outstanding by hospital', `Who owes how much · ${open.length} unpaid cases`,
+    hbars(topN(group(open, 'hospital', r => r.balance), 8), 'var(--s1)', 'hospital', 'Outstanding at')));
+  // make outstanding drill only show unpaid cases
+  DRILLS.forEach(d => { if (d[0].startsWith('Outstanding at')) { const t = d[1]; d[1] = r => isOpen(r) && t(r); } });
+
+  // 3. Earnings by hospital / case type / surgeon
+  const byLabel = { hospital: 'Hospital', caseType: 'Case type', surgeon: 'Surgeon' };
+  out.push(card('Earnings by ' + byLabel[EARN_BY].toLowerCase(), 'Fees billed, largest first', `
+    <div class="seglite">${Object.entries(byLabel).map(([k, l]) =>
+      `<button class="${k === EARN_BY ? 'on' : ''}" onclick="EARN_BY='${k}';renderDash()">${l}</button>`).join('')}</div>
+    ${hbars(topN(group(rows, EARN_BY, r => r.fee), 8).map(i => {
+      const keys = i.keys || [i.key];
+      const n = rows.filter(r => keys.includes(r[EARN_BY] || '—')).length;
+      return { ...i, note: n + (n === 1 ? ' case' : ' cases') };
+    }), 'var(--s1)', EARN_BY, byLabel[EARN_BY])}`));
+
+  // 4. Ageing of dues
+  const [a1, a2, a3] = S.ageing;
+  const buckets = [
+    [`0–${a1} days`, r => age(r) <= a1, 'var(--o1)'],
+    [`${a1 + 1}–${a2} days`, r => age(r) > a1 && age(r) <= a2, 'var(--o2)'],
+    [`${a2 + 1}–${a3} days`, r => age(r) > a2 && age(r) <= a3, 'var(--o3)'],
+    [`${a3}+ days`, r => age(r) > a3, 'var(--o4)']
+  ];
+  const bItems = buckets.map(([l, t, c]) => {
+    const br = open.filter(t);
+    return { label: l, value: sum(br, r => r.balance), color: c, note: br.length + (br.length === 1 ? ' case' : ' cases'), test: t };
+  });
+  const bMax = Math.max(...bItems.map(i => i.value), 1);
+  out.push(card('Ageing of dues', 'Unpaid amount by days since surgery', bItems.map(i => `
+    <div class="hrow tap" ${dr('Dues ' + i.label, r => isOpen(r) && i.test(r))}>
+      <div class="lb">${esc(i.label)}</div>
+      <div><div class="bar" style="width:${(i.value / bMax * 100).toFixed(1)}%;background:${i.color}"></div></div>
+      <div class="v">${inr(i.value)}<small>${esc(i.note)}</small></div></div>`).join('')));
+
+  // 5. Payment status split
+  out.push(card('Payment status', 'Share of cases · amount is fee for Paid, balance due for the rest', share(
+    ['Paid', 'Partially paid', 'Pending', 'Written off'].map(st => {
+      const sr = rows.filter(r => r.status === st);
+      return { label: st, count: sr.length, amount: st === 'Paid' ? sum(sr, r => r.fee) : sum(sr, r => Math.max(r.balance, 0)),
+        color: STATUS_COLOR[st], click: dr('Status: ' + st, r => r.status === st) };
+    }))));
+
+  // 6. Elective vs emergency
+  out.push(card('Elective vs emergency', 'Share of cases · amount is fees billed', share(
+    ['Elective', 'Emergency'].map((u, i) => {
+      const ur = rows.filter(r => (r.urgency || 'Elective') === u);
+      return { label: u, count: ur.length, amount: sum(ur, r => r.fee), color: i ? 'var(--s2)' : 'var(--s1)',
+        click: dr(u, r => (r.urgency || 'Elective') === u) };
+    }))));
+
+  // 6b. Yojana vs private
+  const sParts = ['Private', 'Yojana'].map((sc, i) => {
+    const sr = rows.filter(r => r.scheme === sc);
+    return { label: sc, count: sr.length, amount: sum(sr, r => r.fee), color: i ? 'var(--s2)' : 'var(--s1)', click: dr(sc, r => r.scheme === sc) };
+  });
+  const noS = rows.filter(r => !r.scheme);
+  if (noS.length) sParts.push({ label: 'Not recorded', count: noS.length, amount: sum(noS, r => r.fee), color: '#d6d8dc', click: dr('Scheme not recorded', r => !r.scheme) });
+  out.push(card('Yojana vs private', 'Share of cases · amount is fees billed', share(sParts)));
+
+  // 7. Age groups (ordered, so bars rather than a pie)
+  const AGE_GROUPS = [['0–12', 0, 12], ['13–17', 13, 17], ['18–35', 18, 35], ['36–50', 36, 50], ['51–65', 51, 65], ['66+', 66, 999]];
+  const hasAge = r => r.age !== '' && r.age != null && !isNaN(r.age);
+  const aItems = AGE_GROUPS.map(([l, lo, hi], i) => {
+    const t = r => hasAge(r) && r.age >= lo && (r.age < hi + 1);
+    const ar = rows.filter(t);
+    return { label: l, count: ar.length, fees: sum(ar, r => r.fee), test: t, color: ['var(--o1)', 'var(--o1)', 'var(--o2)', 'var(--o2)', 'var(--o3)', 'var(--o4)'][i] };
+  });
+  const noAge = rows.filter(r => !hasAge(r));
+  if (noAge.length) aItems.push({ label: 'Not recorded', count: noAge.length, fees: sum(noAge, r => r.fee), test: r => !hasAge(r), color: 'var(--st-off)' });
+  const aMax = Math.max(...aItems.map(i => i.count), 1);
+  out.push(card('Patients by age group', 'Number of cases · fees billed shown on the right', aItems.map(i => `
+    <div class="hrow tap" ${dr('Age ' + i.label, i.test)}>
+      <div class="lb">${esc(i.label)}${/^\d/.test(i.label) ? ' yrs' : ''}</div>
+      <div><div class="bar" style="width:${(i.count / aMax * 100).toFixed(1)}%;background:${i.color}"></div></div>
+      <div class="v">${i.count} ${i.count === 1 ? 'case' : 'cases'}<small>${inr(i.fees)}</small></div></div>`).join('')));
+
+  // 8. Gender split
+  const G = S.lists.genders && S.lists.genders.length ? S.lists.genders : ['Male', 'Female', 'Other'];
+  const gCol = ['var(--s1)', 'var(--s2)', 'var(--st-off)'];
+  const gParts = G.map((g, i) => {
+    const gr = rows.filter(r => r.gender === g);
+    return { label: g, count: gr.length, amount: sum(gr, r => r.fee), color: gCol[i] || 'var(--st-off)', click: dr(g, r => r.gender === g) };
+  });
+  const noG = rows.filter(r => !r.gender);
+  if (noG.length) gParts.push({ label: 'Not recorded', count: noG.length, amount: sum(noG, r => r.fee), color: '#d6d8dc', click: dr('Gender not recorded', r => !r.gender) });
+  out.push(card('Gender', 'Share of cases · amount is fees billed', share(gParts)));
+
+  $('dCharts').innerHTML = out.join('');
+}
+
+function pickMonth(i) {
+  const d = window._mData[i];
+  document.querySelectorAll('.vgrp').forEach(g => g.classList.toggle('sel', +g.dataset.i === i));
+  const label = MON[+d.m.slice(5) - 1] + ' ' + d.m.slice(0, 4);
+  $('mReadout').innerHTML = `<b>${label}</b>: billed ${inr(d.billed)} · collected ${inr(d.coll)} · ${d.n} cases
+    <button class="chip" style="margin-left:6px" onclick="drillTo('${label}', r => r.date.startsWith('${d.m}'))">See cases</button>`;
+}
+
+
+/* ---------- select + mark paid ---------- */
+// "45 F", "0.5 M", "F" — compact age/gender shown beside the name
+function ageSex(r) {
+  const a = r.age === '' || r.age == null ? '' : String(r.age);
+  const g = r.gender ? r.gender.charAt(0) : '';
+  return [a, g].filter(Boolean).join(' ');
+}
+let VIEW = [], SEL_MODE = false, PAY = null;
+const SEL = new Set();
+const isDue = r => r && r.balance > 0 && r.status !== 'Written off';
+const byId = id => S.records.find(r => r.id === id);
+
+function cardTap(id) {
+  if (!SEL_MODE) return edit(id);
+  SEL.has(id) ? SEL.delete(id) : SEL.add(id);
+  renderRecords();
+}
+function toggleSelect(force) {
+  SEL_MODE = force === undefined ? !SEL_MODE : force;
+  SEL.clear();
+  renderRecords();
+}
+function selectAll() {
+  const allOn = VIEW.length && VIEW.every(r => SEL.has(r.id));
+  VIEW.forEach(r => allOn ? SEL.delete(r.id) : SEL.add(r.id));
+  renderRecords();
+}
+function updateSelUI() {
+  [...SEL].forEach(id => { if (!byId(id)) SEL.delete(id); });   // drop cases that no longer exist
+  $('selBtn').textContent = SEL_MODE ? 'Cancel' : 'Select';
+  $('expBtn').style.display = SEL_MODE ? 'none' : '';
+  $('selAllBtn').style.display = SEL_MODE && VIEW.length ? '' : 'none';
+  const allOn = VIEW.length && VIEW.every(r => SEL.has(r.id));
+  $('selAllBtn').textContent = allOn ? 'Clear all' : `Select all ${VIEW.length}`;
+  $('selInfo').textContent = SEL_MODE ? (SEL.size ? `${SEL.size} selected` : 'Tap cases to select') : '';
+  const picked = [...SEL].map(byId), due = picked.filter(isDue);
+  $('actionBar').classList.toggle('on', SEL_MODE && SEL.size > 0 && currentScreen === 'records');
+  $('abCount').textContent = `${SEL.size} selected`;
+  $('abDue').textContent = due.length ? `${due.length} unpaid · ${inr(sum(due, r => r.balance))} due` : 'All already paid';
+}
+
+function openPay(ids) {
+  const recs = ids.map(byId).filter(Boolean), due = recs.filter(isDue);
+  if (!due.length) return toast('Nothing to mark: these cases are already paid or written off.', true);
+  PAY = { ids: due.map(r => r.id), single: due.length === 1 };
+  const total = sum(due, r => r.balance), skipped = recs.length - due.length;
+  opts($('payMd'), S.lists.payModes, { all: 'Select' });
+  $('payMd').value = '';
+  $('payDt').value = today(); $('payDt').max = today();
+  $('payAmtBox').style.display = PAY.single ? '' : 'none';
+  $('payWarn').style.display = 'none';
+  if (PAY.single) {
+    const r = due[0];
+    $('payTitle').textContent = 'Mark paid';
+    $('paySum').textContent = `${r.patient} · ${r.hospital} · fee ${inr(r.fee)}, received ${inr(r.received)}, due ${inr(r.balance)}`;
+    $('payAmt').value = r.balance;
+  } else {
+    $('payTitle').textContent = `Settle ${due.length} cases`;
+    $('paySum').textContent = `Marks each case fully paid · total ${inr(total)}` + (skipped ? ` · ${skipped} already paid, skipped` : '');
+  }
+  $('payGo').textContent = PAY.single ? 'Confirm payment' : `Mark ${due.length} paid · ${inr(total)}`;
+  $('payModal').classList.add('on');
+}
+function closePay() { $('payModal').classList.remove('on'); PAY = null; }
+$('payAmt').addEventListener('input', () => {
+  if (!PAY || !PAY.single) return;
+  const r = byId(PAY.ids[0]), a = Number($('payAmt').value) || 0;
+  const w = $('payWarn');
+  if (a > r.balance) { w.textContent = `More than the ${inr(r.balance)} due. Check the amount.`; w.style.display = 'block'; }
+  else if (a > 0 && a < r.balance) { w.textContent = `Partial payment: ${inr(r.balance - a)} will still be due.`; w.style.display = 'block'; }
+  else w.style.display = 'none';
+});
+
+async function confirmPay() {
+  if (!PAY) return;
+  const p = { ids: PAY.ids, date: $('payDt').value, mode: $('payMd').value };
+  if (PAY.single) p.amount = Number($('payAmt').value);
+  if (PAY.single && !(p.amount > 0)) return toast('Enter the amount received', true);
+  if (!p.mode) return toast('Pick a payment mode', true);
+  if (!p.date) return toast('Pick a payment date', true);
+  $('payGo').disabled = true; busy(true, 'Saving payment…');
+  try {
+    const d = await call('markPaid', p);
+    closePay();
+    SEL_MODE = false; SEL.clear();
+    apply(d);
+    toast(d.updated === 1 ? 'Payment saved' : `${d.updated} cases marked paid`);
+  } catch (e) {
+    toast(e.message || String(e), true);
+  } finally {
+    busy(false); $('payGo').disabled = false;
+  }
+}
+
+
+/* ---------- delete, undo, trash ---------- */
+let DEL = null, UNDO = null, TRASH = [];
+
+function askDelete(ids) {
+  const recs = ids.map(byId).filter(Boolean);
+  if (!recs.length) return;
+  DEL = recs.map(r => r.id);
+  const big = recs.length > (S.bulkConfirm || 20);
+  $('delTitle').textContent = recs.length === 1 ? 'Delete this case?' : `Delete ${recs.length} cases?`;
+  $('delSum').textContent = (recs.length === 1 ? `${recs[0].patient} · ${nice(recs[0].date)} · ` : '') +
+    `${inr(sum(recs, r => r.fee))} billed. ${recs.length === 1 ? 'It moves' : 'They move'} to Trash for ${S.trashDays || 30} days and can be restored from More → Trash.`;
+  $('delTypeBox').style.display = big ? '' : 'none';
+  $('delType').value = '';
+  $('delGo').textContent = recs.length === 1 ? 'Delete' : `Delete ${recs.length} cases`;
+  $('delModal').classList.add('on');
+}
+function closeDel() { $('delModal').classList.remove('on'); DEL = null; }
+
+async function confirmDelete() {
+  if (!DEL) return;
+  if (DEL.length > (S.bulkConfirm || 20) && $('delType').value.trim().toUpperCase() !== 'DELETE')
+    return toast('Type DELETE to confirm', true);
+  const ids = DEL, wasEditing = !!S.editId;
+  $('delGo').disabled = true; busy(true, 'Deleting…');
+  try {
+    const d = await call('deleteCases', ids);
+    closeDel(); $('toast').style.display = 'none';
+    SEL_MODE = false; SEL.clear();
+    if (wasEditing) { resetForm(false); }
+    apply(d);
+    if (wasEditing) go('records');
+    showUndo(d.deleted);
+  } catch (e) {
+    toast(e.message || String(e), true);
+  } finally {
+    busy(false); $('delGo').disabled = false;
+  }
+}
+
+function showUndo(ids) {
+  clearTimeout(UNDO && UNDO.t);
+  UNDO = { ids, t: setTimeout(hideUndo, (S.undoSeconds || 10) * 1000) };
+  $('undoText').textContent = ids.length === 1 ? 'Case moved to Trash' : `${ids.length} cases moved to Trash`;
+  $('undoBar').classList.add('on');
+}
+function hideUndo() { $('undoBar').classList.remove('on'); UNDO = null; }
+async function undoDelete() {
+  if (!UNDO) return;
+  const ids = UNDO.ids; clearTimeout(UNDO.t); hideUndo();
+  busy(true, 'Restoring…');
+  try { apply(await call('restoreCases', ids)); toast('Restored'); }
+  catch (e) { toast(e.message || String(e), true); }
+  finally { busy(false); }
+}
+
+async function openTrash() {
+  go('trash'); busy(true);
+  try { renderTrash(await call('getTrash')); }
+  catch (e) { toast(e.message || String(e), true); }
+  finally { busy(false); }
+}
+function renderTrash(t) {
+  TRASH = t.items;
+  $('trashNote').textContent = `Deleted cases stay here for ${t.days} days, then are removed for good.`;
+  $('trashCount').textContent = TRASH.length ? `${TRASH.length} ›` : '›';
+  $('restoreAllBtn').style.display = $('emptyBtn').style.display = TRASH.length ? '' : 'none';
+  $('trashList').innerHTML = TRASH.length ? TRASH.map(r => `
+    <div class="trow">
+      <div class="name" style="font-weight:600">${esc(r.patient)}</div><div style="font-weight:600">${inr(r.fee)}</div>
+      <div class="meta" style="font-size:13px;color:var(--muted)">${nice(r.date)} · ${esc(r.hospital)} · ${esc(r.caseType)}</div>
+      <div style="font-size:13px;color:var(--muted);text-align:right">${esc(r.status)}</div>
+      <div style="grid-column:1/-1;font-size:12px;color:var(--muted)">Deleted ${nice(r.deletedOn)} · removed in ${r.daysLeft} day${r.daysLeft === 1 ? '' : 's'}</div>
+      <div class="btns">
+        <button style="border:1px solid var(--bad);background:#fff;color:var(--bad)" onclick="purgeOne('${esc(r.id)}')">Delete forever</button>
+        <button style="border:1px solid var(--accent);background:#fff;color:var(--accent)" onclick="restoreTrash(['${esc(r.id)}'])">Restore</button>
+      </div>
+    </div>`).join('') : '<div class="empty">Trash is empty.</div>';
+}
+async function restoreTrash(ids) {
+  if (!ids.length) return;
+  busy(true, 'Restoring…');
+  try {
+    const d = await call('restoreCases', ids);
+    apply(d);
+    toast(d.restored === 1 ? 'Case restored' : `${d.restored} cases restored`);
+    renderTrash(await call('getTrash'));
+  } catch (e) { toast(e.message || String(e), true); }
+  finally { busy(false); }
+}
+let CF = null;
+function askCf(title, text, btn, fn) {
+  CF = fn; $('cfTitle').textContent = title; $('cfSum').textContent = text; $('cfGo').textContent = btn;
+  $('cfModal').classList.add('on');
+}
+function closeCf() { $('cfModal').classList.remove('on'); CF = null; }
+function runCf() { const fn = CF; closeCf(); if (fn) fn(); }
+
+function purgeOne(id) {
+  askCf('Delete forever?', 'This case will be removed permanently. This cannot be undone.', 'Delete forever', () => doPurge([id], 'Deleted forever'));
+}
+function emptyTrash() {
+  askCf('Empty Trash?', `All ${TRASH.length} cases in Trash will be removed permanently. This cannot be undone.`, 'Empty Trash', () => doPurge(null, 'Trash emptied'));
+}
+async function doPurge(ids, msg) {
+  busy(true);
+  try { renderTrash(await call('purgeTrash', ids)); toast(msg); }
+  catch (e) { toast(e.message || String(e), true); }
+  finally { busy(false); }
+}
+
+
+/* ---------- lists, export, backup ---------- */
+let LIST = 'hospitals';
+const LIST_NAMES = { hospitals: 'hospital', surgeons: 'surgeon', caseTypes: 'case type', caseDescs: 'case description', riskNotes: 'risk note' };
+
+function openLists() { go('lists'); pickList(LIST); }
+function pickList(which) {
+  LIST = which;
+  [...$('listTabs').children].forEach(b => b.classList.toggle('on', b.dataset.l === which));
+  $('listNew').placeholder = 'Add a new ' + LIST_NAMES[which];
+  const items = S.lists[which] || [];
+  $('listItems').innerHTML = items.length ? items.map((v, i) =>
+    `<button onclick="removeListItem(${i})">${esc(v)} <span style="color:var(--bad)">Remove</span></button>`).join('')
+    : '<div class="empty">No names yet.</div>';
+}
+async function addListItem() {
+  const v = $('listNew').value.trim();
+  if (!v) return toast('Type a name first', true);
+  busy(true, 'Saving…');
+  try {
+    S.lists = await call('listUpdate', 'add', LIST, v) || S.lists;
+    $('listNew').value = ''; fillSelects(); fillDashSelects(); pickList(LIST); toast('Added ' + v);
+  } catch (e) { toast(e.message || String(e), true); }
+  finally { busy(false); }
+}
+function removeListItem(i) {
+  const v = (S.lists[LIST] || [])[i];
+  if (!v) return;
+  askCf(`Remove ${v}?`, `It will no longer appear in the ${LIST_NAMES[LIST]} dropdown. Existing cases keep it.`, 'Remove', async () => {
+    busy(true, 'Saving…');
+    try { S.lists = await call('listUpdate', 'remove', LIST, v); fillSelects(); fillDashSelects(); pickList(LIST); toast('Removed ' + v); }
+    catch (e) { toast(e.message || String(e), true); }
+    finally { busy(false); }
+  });
+}
+
+function showFile(title, text, url) {
+  $('fileTitle').textContent = title; $('fileSum').textContent = text; $('fileLink').href = url;
+  $('fileModal').classList.add('on');
+}
+async function exportView() {
+  if (!VIEW.length) return toast('No cases in this view to export', true);
+  busy(true, `Exporting ${VIEW.length} cases…`);
+  try {
+    const f = await call('exportCases', VIEW.map(r => r.id));
+    showFile('Excel file ready', `${f.count} cases saved as "${f.name}.xlsx" in your Drive folder "Case Tracker Exports".`, f.url);
+  } catch (e) { toast(e.message || String(e), true); }
+  finally { busy(false); }
+}
+async function doBackup() {
+  busy(true, 'Backing up…');
+  try {
+    const b = await call('backupNow');
+    $('backupInfo').textContent = 'Last: ' + nice(b.date);
+    showFile('Backup saved', `Full copy saved as "${b.name}.xlsx" in your Drive folder "${b.folder}". The newest 12 backups are kept.`, b.url);
+  } catch (e) { toast(e.message || String(e), true); }
+  finally { busy(false); }
+}
+async function loadBackupInfo() {
+  try { const b = await call('getBackupInfo'); $('backupInfo').textContent = b.last ? 'Last: ' + nice(b.last) : 'Never ›'; } catch (e) {}
+}
+
+/* ---------- navigation ---------- */
+let currentScreen = 'add';
+const TITLES = { add: 'Add case', records: 'Records', dash: 'Dashboard', more: 'More', trash: 'Trash', lists: 'Manage lists' };
+function setTitle(t) { $('title').textContent = t; }
+function go(s, title) {
+  currentScreen = s;
+  document.querySelectorAll('.screen').forEach(x => x.classList.toggle('on', x.id === 's-' + s));
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.s === (['trash', 'lists'].includes(s) ? 'more' : s)));
+  setTitle(title || (s === 'add' && S.editId ? 'Edit ' + S.editId : TITLES[s]));
+  if (typeof updateSelUI === 'function' && $('selBtn')) updateSelUI();
+  window.scrollTo(0, 0);
+}
+
+load();
+</script>
+</body>
+</html>
