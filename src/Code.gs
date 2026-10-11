@@ -5,29 +5,55 @@
 
 const SHEET_ID = ''; // Leave blank when this script is opened from the Sheet (Extensions → Apps Script)
 const CASES = 'Cases', LISTS = 'Lists', TRASH = 'Trash', SETTINGS = 'Settings';
-const NCOLS = 25;
+const NCOLS = 31;
 const COL = {
   id: 1, date: 2, patient: 3, age: 4, gender: 5, uhid: 6, hospital: 7, surgeon: 8, caseType: 9,
   anaesthesia: 10, caseDesc: 11, urgency: 12, scheme: 13, riskNotes: 14, duration: 15, fee: 16,
-  received: 17, balance: 18, status: 19, payDate: 20, payMode: 21, billNo: 22, notes: 23,
-  created: 24, updated: 25
+  shared: 17, role: 18, coAnaes: 19, collector: 20, myShare: 21,
+  received: 22, balance: 23, status: 24, payDate: 25, payMode: 26, settledOn: 27, billNo: 28, notes: 29,
+  created: 30, updated: 31
 };
+const ROLES = ['Took over', 'Handed over'];
+const COLLECTORS = ['Me', 'Colleague', 'Separately'];
 const GENDERS = ['Male', 'Female', 'Other'];
 const SCHEMES = ['Private', 'Yojana'];
 // Lists tab columns
 const LCOL = { hospitals: 1, surgeons: 2, caseTypes: 3, anaesthesia: 4, urgency: 5, payModes: 6, statuses: 7,
-  genders: 8, caseDescs: 9, riskNotes: 10, schemes: 11 };
-const NLISTS = 11;
+  genders: 8, caseDescs: 9, riskNotes: 10, schemes: 11, coAnaes: 12 };
+const NLISTS = 12;
 const RISK_SEP = '; ';
-const A1 = c => String.fromCharCode(64 + c);   // column number → letter (A–Z)
+// column number → letter (A, B, … Z, AA, AB …)
+const A1 = c => { let s = ''; while (c > 0) { const m = (c - 1) % 26; s = String.fromCharCode(65 + m) + s; c = Math.floor((c - 1) / 26); } return s; };
+
+/* What Dad expects to receive for a case, and from whom:
+   - normal case                 → full fee, from the hospital
+   - shared, Dad collects        → full fee from the hospital (he then owes the colleague their part)
+   - shared, colleague collects  → Dad's share, from the colleague
+   - shared, paid separately     → Dad's share, from the hospital
+   Shared + not collected by Dad + share not yet agreed → "Split pending". */
+const SPLIT_PENDING_F = r => {
+  const Q = A1(COL.shared), T = A1(COL.collector), U = A1(COL.myShare);
+  return `AND(${Q}${r}="Yes",${T}${r}<>"Me",${U}${r}="")`;
+};
+const EXPECTED_F = r => {
+  const P = A1(COL.fee), Q = A1(COL.shared), T = A1(COL.collector), U = A1(COL.myShare);
+  return `IF(${Q}${r}="Yes",IF(${T}${r}="Me",${P}${r},${U}${r}),${P}${r})`;
+};
 const BAL_F = r => {
-  const K = A1(COL.fee), L = A1(COL.received);
-  return `=IF(${K}${r}="","",${K}${r}-N(${L}${r}))`;
+  const P = A1(COL.fee), V = A1(COL.received);
+  return `=IF(${P}${r}="","",IF(${SPLIT_PENDING_F(r)},"",${EXPECTED_F(r)}-N(${V}${r})))`;
 };
 const STATUS_F = r => {
-  const K = A1(COL.fee), L = A1(COL.received), M = A1(COL.balance);
-  return `=IF(${K}${r}="","",IF(${M}${r}<=0,"Paid",IF(N(${L}${r})>0,"Partially paid","Pending")))`;
+  const P = A1(COL.fee), V = A1(COL.received), W = A1(COL.balance);
+  return `=IF(${P}${r}="","",IF(${SPLIT_PENDING_F(r)},"Split pending",IF(${W}${r}<=0,"Paid",IF(N(${V}${r})>0,"Partially paid","Pending"))))`;
 };
+// Same rule in code (used where formulas aren't available, e.g. markPaid)
+function expected_(shared, collector, share, fee) {
+  if (shared !== 'Yes') return { amount: fee, pending: false };
+  if (collector === 'Me') return { amount: fee, pending: false };
+  if (share === '' || share === null || share === undefined) return { amount: 0, pending: true };
+  return { amount: Number(share) || 0, pending: false };
+}
 
 /* ---------- Entry point ---------- */
 
@@ -49,8 +75,14 @@ function setupSheet() {
   const rows = Math.max(cases.getMaxRows() - 1, 1000);
   const map = [
     [COL.hospital, 1], [COL.surgeon, 2], [COL.caseType, 3], [COL.anaesthesia, 4],
-    [COL.urgency, 5], [COL.payMode, 6], [COL.gender, 8], [COL.caseDesc, LCOL.caseDescs], [COL.scheme, LCOL.schemes]
+    [COL.urgency, 5], [COL.payMode, 6], [COL.gender, 8], [COL.caseDesc, LCOL.caseDescs], [COL.scheme, LCOL.schemes],
+    [COL.coAnaes, LCOL.coAnaes]
   ];
+  // Free-text / number / date columns must have NO dropdown. Inserting columns copies the
+  // neighbouring column's rule into the new one, so clear these every time setup runs.
+  [COL.uhid, COL.riskNotes, COL.duration, COL.shared, COL.role, COL.collector, COL.myShare,
+   COL.settledOn, COL.billNo, COL.notes, COL.created, COL.updated]
+    .forEach(c => cases.getRange(2, c, rows, 1).clearDataValidations());
   map.forEach(([caseCol, listCol]) => {
     const rule = SpreadsheetApp.newDataValidation()
       .requireValueInRange(lists.getRange(2, listCol, 200, 1), true)
@@ -63,7 +95,8 @@ function setupSheet() {
   const st = ss.getSheetByName(SETTINGS);
   const have = st.getRange(1, 1, Math.max(st.getLastRow(), 1), 1).getValues().map(r => String(r[0]).trim());
   [['Doctor name', '', 'Shown at the top of every screen, e.g. Dr. A. Sharma'],
-   ['Credentials', '', 'Shown under the name, e.g. MBBS, MD · Anaesthesiologist']].forEach(row => {
+   ['Credentials', '', 'Shown under the name, e.g. MBBS, MD · Anaesthesiologist'],
+   ['Track colleague settlements', 'Yes', 'Yes = track who owes whom on shared cases; No = only record the final share']].forEach(row => {
     if (!have.includes(row[0])) st.appendRow(row);
   });
   SpreadsheetApp.flush();
@@ -122,6 +155,44 @@ function migrateAddCaseFields() {
   Logger.log('Case description, Yojana / Private and Risk notes columns added.');
 }
 
+// Run ONCE (select migrateAddSharedCases → Run) to add shared-case columns.
+// Run migrateAddAgeGender and migrateAddCaseFields first if you haven't. Safe to run twice.
+function migrateAddSharedCases() {
+  const ss = ss_();
+  [CASES, TRASH].forEach(name => {
+    const sh = ss.getSheetByName(name);
+    if (String(sh.getRange(1, COL.caseDesc).getValue()).trim() !== 'Case description') throw new Error('Run migrateAddCaseFields first.');
+    if (String(sh.getRange(1, COL.shared).getValue()).trim() === 'Shared case') return;   // already done
+    sh.insertColumnsAfter(COL.fee, 5);            // → Shared case, Role, Co-anaesthesiologist, Collected by, My share
+    sh.insertColumnsAfter(COL.payMode, 1);        // → Settled with colleague on
+    [[COL.shared, 'Shared case', 80], [COL.role, 'Role', 100], [COL.coAnaes, 'Co-anaesthesiologist', 180],
+     [COL.collector, 'Collected by', 100], [COL.myShare, 'My share (₹)', 100], [COL.settledOn, 'Settled with colleague on', 130]]
+      .forEach(([c, title, w]) => {
+        sh.getRange(1, COL.patient).copyTo(sh.getRange(1, c), SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false);
+        sh.getRange(1, c).setValue(title);
+        sh.setColumnWidth(c, w);
+      });
+    const rows = sh.getMaxRows() - 1;
+    sh.getRange(2, COL.fee, rows, 1).copyTo(sh.getRange(2, COL.myShare, rows, 1), SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false);
+    sh.getRange(2, COL.payDate, rows, 1).copyTo(sh.getRange(2, COL.settledOn, rows, 1), SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false);
+    if (name === CASES) {
+      // New balance/status rules on every row (a manual "Written off" stays)
+      const st = sh.getRange(2, COL.status, rows, 1).getValues();
+      sh.getRange(2, COL.balance, rows, 2).setFormulas(st.map((v, i) => [
+        BAL_F(i + 2), String(v[0]) === 'Written off' ? '' : STATUS_F(i + 2)]));
+      st.forEach((v, i) => { if (String(v[0]) === 'Written off') sh.getRange(i + 2, COL.status).setValue('Written off'); });
+    }
+  });
+  const lists = ss.getSheetByName(LISTS);
+  if (String(lists.getRange(1, LCOL.coAnaes).getValue()).trim() !== 'Co-anaesthesiologists') {
+    lists.getRange(1, 7).copyTo(lists.getRange(1, LCOL.coAnaes), SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false);
+    lists.getRange(1, LCOL.coAnaes).setValue('Co-anaesthesiologists');
+  }
+  addToList_(LCOL.statuses, 'Split pending');
+  setupSheet();
+  Logger.log('Shared-case columns added.');
+}
+
 /* ---------- Called from the app ---------- */
 
 function getInitData() {
@@ -142,7 +213,8 @@ function getInitData() {
     undoSeconds: Number(m['Undo banner (seconds)']) || 10,
     trashDays: Number(m['Trash retention (days)']) || 30,
     doctorName: String(m['Doctor name'] || '').trim(),
-    credentials: String(m['Credentials'] || '').trim()
+    credentials: String(m['Credentials'] || '').trim(),
+    trackSettlements: String(m['Track colleague settlements'] || 'Yes').trim().toLowerCase() !== 'no'
   };
 }
 
@@ -176,16 +248,22 @@ function saveCase(c) {
     addToList_(LCOL.hospitals, c.hospital.trim());
     addToList_(LCOL.surgeons, c.surgeon.trim());
     if (desc) addToList_(LCOL.caseDescs, desc);
+    const shared = !!c.shared;
+    const co = shared ? String(c.coAnaes || '').trim() : '';
+    if (co) addToList_(LCOL.coAnaes, co);
     risks.forEach(r => addToList_(LCOL.riskNotes, r));
     SpreadsheetApp.flush();
 
     sh.getRange(row, 1, 1, COL.received).setValues([[
       id, toDate_(c.date), String(c.patient).trim(), num_(c.age), c.gender || '', c.uhid || '',
       c.hospital.trim(), c.surgeon.trim(), c.caseType, c.anaesthesia || '', desc, c.urgency || 'Elective',
-      c.scheme, risks.join(RISK_SEP), num_(c.duration), Number(c.fee), received
+      c.scheme, risks.join(RISK_SEP), num_(c.duration), Number(c.fee),
+      shared ? 'Yes' : '', shared ? c.role : '', co, shared ? c.collector : '', shared ? num_(c.myShare) : '',
+      received
     ]]);
-    sh.getRange(row, COL.payDate, 1, 6).setValues([[
-      received > 0 ? toDate_(c.payDate) : '', received > 0 ? (c.payMode || '') : '',
+    const settled = shared && c.collector === 'Me' && c.settledOn ? toDate_(c.settledOn) : '';
+    sh.getRange(row, COL.payDate, 1, COL.updated - COL.payDate + 1).setValues([[
+      received > 0 ? toDate_(c.payDate) : '', received > 0 ? (c.payMode || '') : '', settled,
       c.billNo || '', c.notes || '', created, now
     ]]);
     ensureFormulas_(sh, row);
@@ -227,7 +305,7 @@ function markPaid(p) {
     if (last < 2) throw new Error('No cases found.');
     const n = last - 1;
     const ids = sh.getRange(2, COL.id, n, 1).getValues().map(r => String(r[0]).trim());
-    // Columns K (fee) through T (updated at): edit values, keep formulas as formulas.
+    // Fee through Updated at: edit values, keep formulas as formulas.
     const rng = sh.getRange(2, COL.fee, n, COL.updated - COL.fee + 1);
     const vals = rng.getValues(), forms = rng.getFormulas();
     const k = c => c - COL.fee;  // column → index in this block
@@ -238,8 +316,9 @@ function markPaid(p) {
       if (!want.has(id)) return;
       const v = vals[i];
       const fee = Number(v[k(COL.fee)]) || 0, got = Number(v[k(COL.received)]) || 0;
-      if (String(v[k(COL.status)]) === 'Written off' || fee - got <= 0) return;
-      v[k(COL.received)] = single ? got + Number(p.amount) : fee;
+      const exp = expected_(String(v[k(COL.shared)]), String(v[k(COL.collector)]), v[k(COL.myShare)], fee);
+      if (String(v[k(COL.status)]) === 'Written off' || exp.pending || exp.amount - got <= 0) return;
+      v[k(COL.received)] = single ? got + Number(p.amount) : exp.amount;
       v[k(COL.payDate)] = toDate_(p.date);
       v[k(COL.payMode)] = p.mode;
       v[k(COL.updated)] = now;
@@ -259,6 +338,58 @@ function markPaid(p) {
   }
   const data = getInitData();
   data.updated = updated;
+  return data;
+}
+
+/* ---------- Shared cases: agree the split, settle with the colleague ---------- */
+
+// Records Dad's share once the split is agreed.
+function setSplit(id, share) {
+  checkAccess_();
+  const lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    const sh = ss_().getSheetByName(CASES);
+    const row = findRow_(sh, id);
+    if (!row) throw new Error('Case not found. Refresh and try again.');
+    const fee = Number(sh.getRange(row, COL.fee).getValue()) || 0;
+    if (String(sh.getRange(row, COL.shared).getValue()) !== 'Yes') throw new Error('This is not a shared case.');
+    if (!(Number(share) >= 0 && Number(share) <= fee)) throw new Error('Your share must be between 0 and the fee (' + fee + ').');
+    sh.getRange(row, COL.myShare).setValue(Number(share));
+    sh.getRange(row, COL.updated).setValue(new Date());
+    SpreadsheetApp.flush();
+  } finally {
+    lock.releaseLock();
+  }
+  return getInitData();
+}
+
+// Marks that Dad has paid colleagues their part (cases Dad collected). date '' clears it.
+function settleColleague(ids, date) {
+  checkAccess_();
+  if (!ids || !ids.length) throw new Error('No cases selected.');
+  const today = Utilities.formatDate(new Date(), ss_().getSpreadsheetTimeZone(), 'yyyy-MM-dd');
+  if (date && date > today) throw new Error('Date cannot be in the future.');
+  const lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  let n = 0;
+  try {
+    const sh = ss_().getSheetByName(CASES), now = new Date();
+    ids.forEach(id => {
+      const row = findRow_(sh, id);
+      if (!row) return;
+      const v = sh.getRange(row, 1, 1, NCOLS).getValues()[0];
+      if (v[COL.shared - 1] !== 'Yes' || v[COL.collector - 1] !== 'Me' || v[COL.myShare - 1] === '') return;
+      sh.getRange(row, COL.settledOn).setValue(date ? toDate_(date) : '');
+      sh.getRange(row, COL.updated).setValue(now);
+      n++;
+    });
+    SpreadsheetApp.flush();
+  } finally {
+    lock.releaseLock();
+  }
+  const data = getInitData();
+  data.settled = n;
   return data;
 }
 
@@ -323,10 +454,11 @@ function restoreCases(ids) {
       addToList_(1, String(v[COL.hospital - 1]).trim());
       addToList_(2, String(v[COL.surgeon - 1]).trim());
       if (String(v[COL.caseDesc - 1]).trim()) addToList_(LCOL.caseDescs, String(v[COL.caseDesc - 1]).trim());
+      if (String(v[COL.coAnaes - 1]).trim()) addToList_(LCOL.coAnaes, String(v[COL.coAnaes - 1]).trim());
       SpreadsheetApp.flush();
       const row = findRow_(sh, id) || firstEmptyRow_(sh);
       sh.getRange(row, 1, 1, COL.received).setValues([v.slice(0, COL.received)]);
-      sh.getRange(row, COL.payDate, 1, 6).setValues([v.slice(COL.payDate - 1, NCOLS - 1).concat([new Date()])]);
+      sh.getRange(row, COL.payDate, 1, NCOLS - COL.payDate + 1).setValues([v.slice(COL.payDate - 1, NCOLS - 1).concat([new Date()])]);
       sh.getRange(row, COL.balance).setFormula(BAL_F(row));
       if (String(v[COL.status - 1]) === 'Written off') sh.getRange(row, COL.status).setValue('Written off');
       else sh.getRange(row, COL.status).setFormula(STATUS_F(row));
@@ -424,7 +556,7 @@ function trashDays_() {
 /* ---------- Lists, Export, Backup ---------- */
 
 const LIST_COLS = { hospitals: LCOL.hospitals, surgeons: LCOL.surgeons, caseTypes: LCOL.caseTypes,
-  caseDescs: LCOL.caseDescs, riskNotes: LCOL.riskNotes };
+  caseDescs: LCOL.caseDescs, riskNotes: LCOL.riskNotes, coAnaes: LCOL.coAnaes };
 
 // op = 'add' | 'remove'; which = 'hospitals' | 'surgeons' | 'caseTypes'
 // Removing only hides a name from the dropdowns; existing cases keep it.
@@ -521,7 +653,9 @@ function writeXlsx_(name, rows, folder) {
   if (rows.length > 1) {
     sh.getRange(2, COL.date, rows.length - 1, 1).setNumberFormat('dd-mmm-yyyy');
     sh.getRange(2, COL.payDate, rows.length - 1, 1).setNumberFormat('dd-mmm-yyyy');
-    sh.getRange(2, COL.fee, rows.length - 1, 3).setNumberFormat('[>=10000000]##\\,##\\,##\\,##0;[>=100000]##\\,##\\,##0;##,##0');
+    [COL.fee, COL.myShare, COL.received, COL.balance].forEach(c => sh.getRange(2, c, rows.length - 1, 1)
+      .setNumberFormat('[>=10000000]##\\,##\\,##\\,##0;[>=100000]##\\,##\\,##0;##,##0'));
+    sh.getRange(2, COL.settledOn, rows.length - 1, 1).setNumberFormat('dd-mmm-yyyy');
     sh.getRange(2, COL.created, rows.length - 1, 2).setNumberFormat('dd-mmm-yyyy hh:mm');
   }
   sh.setFrozenRows(1);
@@ -544,7 +678,8 @@ function getLists_() {
     urgency: col(4), payModes: col(5), statuses: col(6),
     genders: col(7).length ? col(7) : GENDERS,
     caseDescs: col(8), riskNotes: col(9),
-    schemes: col(10).length ? col(10) : SCHEMES
+    schemes: col(10).length ? col(10) : SCHEMES,
+    coAnaes: col(11)
   };
 }
 
@@ -574,8 +709,14 @@ function getRecords_() {
       riskNotes: String(r[COL.riskNotes - 1]).split(';').map(x => x.trim()).filter(Boolean),
       duration: r[COL.duration - 1] === '' ? '' : Number(r[COL.duration - 1]),
       fee: Number(r[COL.fee - 1]) || 0,
+      shared: String(r[COL.shared - 1]) === 'Yes',
+      role: String(r[COL.role - 1]),
+      coAnaes: String(r[COL.coAnaes - 1]),
+      collector: String(r[COL.collector - 1]),
+      myShare: r[COL.myShare - 1] === '' ? '' : Number(r[COL.myShare - 1]),
+      settledOn: fmt(r[COL.settledOn - 1]),
       received: Number(r[COL.received - 1]) || 0,
-      balance: Number(r[COL.balance - 1]) || 0,
+      balance: r[COL.balance - 1] === '' ? '' : Number(r[COL.balance - 1]) || 0,
       status: String(r[COL.status - 1]),
       payDate: fmt(r[COL.payDate - 1]),
       payMode: String(r[COL.payMode - 1]),
@@ -617,6 +758,11 @@ function validate_(c) {
   if (c.age === '' || c.age === undefined || c.age === null) missing.push('age');
   if (!c.gender) missing.push('gender');
   if (!SCHEMES.includes(c.scheme)) missing.push('Yojana / Private');
+  if (c.shared) {
+    if (!ROLES.includes(c.role)) missing.push('took over / handed over');
+    if (!String(c.coAnaes || '').trim()) missing.push('co-anaesthesiologist');
+    if (!COLLECTORS.includes(c.collector)) missing.push('who collects');
+  }
   if (!String(c.hospital || '').trim()) missing.push('hospital');
   if (!String(c.surgeon || '').trim()) missing.push('surgeon');
   if (!c.caseType) missing.push('case type');
@@ -626,6 +772,8 @@ function validate_(c) {
   if (c.date > today) return 'Surgery date cannot be in the future.';
   if (!(Number(c.fee) > 0)) return 'Fee must be more than 0.';
   if (!(Number(c.age) >= 0 && Number(c.age) <= 120)) return 'Age must be between 0 and 120.';
+  if (c.shared && c.myShare !== '' && c.myShare !== undefined && c.myShare !== null &&
+      !(Number(c.myShare) >= 0 && Number(c.myShare) <= Number(c.fee))) return 'Your share must be between 0 and the fee.';
   const received = Number(c.received) || 0;
   if (received < 0) return 'Amount received cannot be negative.';
   if (received > 0 && !c.payMode) return 'Pick a payment mode.';

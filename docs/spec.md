@@ -21,15 +21,21 @@ A Google Sheet holds the data, Apps Script serves a mobile web app, and only the
 | M | Yojana / Private | Two-way toggle | Yes | Defaults to Private |
 | N | Risk notes | Tags, stored as `a; b; c` | No | Builds a vocabulary for suggestions |
 | O | Duration (min) | Number | No | |
-| P | Fee charged (₹) | Number | Yes | Suggests last fee for hospital + case type |
-| Q | Amount received (₹) | Number | When paid | Adds up across partial payments |
-| R | Balance (₹) | Formula | Auto | P − Q |
-| S | Payment status | Formula | Auto | Paid / Partially paid / Pending; "Written off" is a manual value |
-| T | Payment date | Date | When paid | |
-| U | Payment mode | Cash / UPI / NEFT-RTGS / Cheque | When paid | |
-| V | Bill / ref no. | Text | No | |
-| W | Notes | Text | No | |
-| X–Y | Created at, Updated at | Auto | Auto | |
+| P | Fee charged (₹) | Number | Yes | Total case fee; suggests last fee for hospital + case type |
+| Q | Shared case | Yes / blank | No | Case shared with another anaesthesiologist |
+| R | Role | Took over / Handed over | If shared | |
+| S | Co-anaesthesiologist | Dropdown + add new | If shared | Learns new names |
+| T | Collected by | Me / Colleague / Separately | If shared | Who the hospital pays |
+| U | My share (₹) | Number | No | Blank = split not agreed yet |
+| V | Amount received (₹) | Number | When paid | From the hospital, or from the colleague if they collected |
+| W | Balance (₹) | Formula | Auto | Expected − V; expected = P, or U when the colleague collects / paid separately |
+| X | Payment status | Formula | Auto | Paid / Partially paid / Pending / Split pending; "Written off" is a manual value |
+| Y | Payment date | Date | When paid | |
+| Z | Payment mode | Cash / UPI / NEFT-RTGS / Cheque | When paid | |
+| AA | Settled with colleague on | Date | No | When I collected and paid the colleague their part |
+| AB | Bill / ref no. | Text | No | |
+| AC | Notes | Text | No | |
+| AD–AE | Created at, Updated at | Auto | Auto | |
 
 **Other tabs.** *Lists* holds dropdown values and vocabularies. *Trash* has the same columns plus Deleted at. *Settings* holds key/value configuration (see README).
 
@@ -46,6 +52,9 @@ A Google Sheet holds the data, Apps Script serves a mobile web app, and only the
 
 | Rule | Detail |
 |---|---|
+| Shared case earnings | My earnings = full fee for normal cases, my share for shared cases; undecided splits are excluded and shown as Split pending |
+| I owe colleague | I collected: colleague share × (received ÷ fee), until marked settled |
+| Colleague owes me | Colleague collected: my share − received |
 | Partial payment | Mark paid adds the amount to what was received; status follows the balance |
 | Bulk settle | Each selected unpaid case becomes fully paid with one date and mode; paid and written-off cases are skipped |
 | Delete | Moves rows to Trash; typed DELETE above the threshold; Undo for N seconds; restore any time before the purge |
@@ -58,7 +67,7 @@ A Google Sheet holds the data, Apps Script serves a mobile web app, and only the
 
 | Function | Called from |
 |---|---|
-| `getInitData`, `saveCase`, `markPaid`, `deleteCases`, `restoreCases`, `getTrash`, `purgeTrash`, `listUpdate`, `exportCases`, `backupNow`, `getBackupInfo` | The app |
+| `getInitData`, `saveCase`, `markPaid`, `setSplit`, `settleColleague`, `deleteCases`, `restoreCases`, `getTrash`, `purgeTrash`, `listUpdate`, `exportCases`, `backupNow`, `getBackupInfo` | The app |
 | `setupSheet`, `installTriggers` | Run once from the editor |
-| `migrateAddAgeGender`, `migrateAddCaseFields` | Only for sheets created before those columns existed |
+| `migrateAddAgeGender`, `migrateAddCaseFields`, `migrateAddSharedCases` | Only for sheets created before those columns existed |
 | `purgeOldTrash`, `monthlyBackup` | Triggers |

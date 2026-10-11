@@ -12,6 +12,11 @@ Built for a freelance anaesthesiologist; it suits any doctor billing per case ac
   <img src="docs/screenshots/4-records.png" width="24%" alt="Records">
   <img src="docs/screenshots/5-mark-paid.png" width="24%" alt="Mark paid">
 </p>
+<p>
+  <img src="docs/screenshots/7-shared-case.png" width="24%" alt="Shared case entry">
+  <img src="docs/screenshots/8-colleague-balances.png" width="24%" alt="Colleague balances">
+  <img src="docs/screenshots/9-shared-vs-independent.png" width="24%" alt="Shared vs independent donut">
+</p>
 
 *Screenshots use made-up demo data.*
 
@@ -20,6 +25,7 @@ Built for a freelance anaesthesiologist; it suits any doctor billing per case ac
 | Area | What it does |
 |---|---|
 | **Add case** | Date, patient name, age, gender, IP/UHID, hospital, surgeon, case type, anaesthesia type, case description, elective/emergency, Yojana/private, risk notes, fee. Dropdowns learn new hospitals, surgeons and descriptions as they are typed. Suggests the last fee charged for the same hospital and case type. |
+| **Shared cases** | For cases taken over from, or handed over to, another anaesthesiologist. Record who collects from the hospital and your share; leave the share blank until the split is agreed ("Split pending"). An optional ledger (Settings: *Track colleague settlements*) shows who owes whom per colleague, with one-tap settle. Earnings everywhere count only your share. The dashboard adds a shared-vs-independent donut, a shared-case summary (average share, kept vs passed on, took over vs handed over) and earnings by colleague. |
 | **Risk notes** | Tag-style input. Every note typed becomes vocabulary and is suggested again when its letters are typed, matching anywhere in the word. |
 | **Records** | Search, filters, edit, one-tap **Mark paid** (full or partial), multi-select to settle a hospital's pending cases in one go, **Export** of the filtered view to Excel. |
 | **Dashboard** | Billed, collected, outstanding, collection rate, overdue dues; charts by month, hospital, case type, surgeon, ageing of dues, payment status, elective/emergency, Yojana/private, age group and gender. Every chart filters by period, hospital, case type, surgeon, status, payment mode and more; tapping a bar opens those cases. |
@@ -78,6 +84,7 @@ clasp push
 | Owner / editor email | blank | Once filled, only these accounts can use the app |
 | Backup folder name | Case Tracker Backups | Drive folder for backups |
 | Doctor name / Credentials | blank | Header on every screen |
+| Track colleague settlements | Yes | No = only record your final share on shared cases |
 
 ## Data model
 

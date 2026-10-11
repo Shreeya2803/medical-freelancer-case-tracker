@@ -78,6 +78,7 @@
   .rec .amt { text-align: right; font-weight: 600; } .badge { font-size: 12px; padding: 2px 8px; border-radius: 10px; justify-self: end; }
   .b-Paid { background: #e3f4ea; color: var(--good); } .b-Pending { background: #fdecea; color: var(--bad); }
   .b-Partially { background: #fff4e0; color: var(--warn); } .b-Written { background: #eee; color: var(--muted); }
+  .b-Split { background: #e6eef9; color: #256abf; }
   .empty { text-align: center; color: var(--muted); padding: 40px 0; }
   .placeholder { text-align: center; color: var(--muted); padding: 60px 20px; }
 
@@ -256,7 +257,30 @@
         <label>Fee charged (₹) <span class="req">*</span></label>
         <input id="fee" type="number" inputmode="numeric" min="1" step="1">
         <button type="button" class="hint" id="feeHint"></button>
-        <label class="tgl"><span>Paid already?</span><input type="checkbox" id="paid"><span class="knob"></span></label>
+        <label class="tgl"><span>Shared with another anaesthesiologist?</span><input type="checkbox" id="sharedTgl"><span class="knob"></span></label>
+        <div id="sharedBox" style="display:none">
+          <div class="seg" id="role" style="margin-top:10px">
+            <button type="button" data-v="Took over" onclick="setSeg2('role','Took over')">I took over</button>
+            <button type="button" data-v="Handed over" onclick="setSeg2('role','Handed over')">I handed over</button>
+          </div>
+          <label id="coLabel">Co-anaesthesiologist <span class="req">*</span></label>
+          <select id="coAnaes"></select>
+          <input id="coAnaesNew" placeholder="Name, e.g. Dr. Joshi" style="display:none;margin-top:6px">
+          <label>Who collects from the hospital? <span class="req">*</span></label>
+          <div class="seg" id="collector">
+            <button type="button" data-v="Me" onclick="setSeg2('collector','Me')">I do</button>
+            <button type="button" data-v="Colleague" onclick="setSeg2('collector','Colleague')">Colleague</button>
+            <button type="button" data-v="Separately" onclick="setSeg2('collector','Separately')">Separately</button>
+          </div>
+          <label>My share (₹)</label>
+          <input id="myShare" type="number" inputmode="numeric" min="0" step="1" placeholder="Leave blank if split not decided yet">
+          <div class="sub" id="shareNote" style="font-size:13px;color:var(--muted);margin-top:6px"></div>
+          <div id="settledBox" style="display:none">
+            <label>Paid colleague their part on</label>
+            <input id="settledOn" type="date">
+          </div>
+        </div>
+        <label class="tgl"><span id="paidLabel">Paid already?</span><input type="checkbox" id="paid"><span class="knob"></span></label>
         <div id="payBox" style="display:none">
           <div class="row2">
             <div><label>Amount received (₹)</label><input id="received" type="number" inputmode="numeric" min="0" step="1"></div>
@@ -345,6 +369,9 @@
       <label>Elective / Emergency</label><select id="dUrgency" multiple onchange="renderDash()"></select>
       <label>Gender</label><select id="dGender" multiple onchange="renderDash()"></select>
       <label>Yojana / Private</label><select id="dScheme" multiple onchange="renderDash()"></select>
+      <label>Shared / Independent</label><select id="dKind" multiple onchange="renderDash()"></select>
+      <label>Co-anaesthesiologist</label><select id="dCo" multiple onchange="renderDash()"></select>
+      <label>Took over / Handed over</label><select id="dRole" multiple onchange="renderDash()"></select>
       <div class="actions" style="margin-top:12px">
         <button class="btn ghost" onclick="$('dPanel').classList.remove('open')">Done</button>
         <button class="btn plain" onclick="resetDash()">Reset all filters</button>
@@ -357,12 +384,19 @@
   <section id="s-more" class="screen">
     <div class="menu">
       <button onclick="openLists()">Manage lists <span>›</span></button>
+      <button id="ledgerMenu" onclick="openLedger()">Colleague balances <span>›</span></button>
       <button onclick="openTrash()">Trash <span id="trashCount">›</span></button>
       <button onclick="doBackup()">Back up now <span id="backupInfo">›</span></button>
       <button onclick="load()">Refresh data <span>↻</span></button>
     </div>
     <p style="font-size:13px;color:var(--muted);margin:12px 4px">To export cases to Excel: Records → filter → <b>Export</b>.
       A full backup of everything is also saved automatically on the 1st of each month.</p>
+  </section>
+
+  <section id="s-ledger" class="screen">
+    <div class="rtools" style="margin:0 0 8px"><button class="lnk" onclick="nav('more')">‹ Back</button><span></span></div>
+    <p style="font-size:13px;color:var(--muted);margin:0 4px 10px">"I owe" is the colleague's part of what I collected from hospitals. "Owes me" is my share of what they collected.</p>
+    <div id="ledgerList"></div>
   </section>
 
   <section id="s-lists" class="screen">
@@ -373,6 +407,7 @@
       <button data-l="caseTypes" onclick="pickList('caseTypes')">Case types</button>
       <button data-l="caseDescs" onclick="pickList('caseDescs')">Descriptions</button>
       <button data-l="riskNotes" onclick="pickList('riskNotes')">Risk notes</button>
+      <button data-l="coAnaes" onclick="pickList('coAnaes')">Colleagues</button>
     </div>
     <div class="card" style="display:flex;gap:8px;padding:10px">
       <input id="listNew" placeholder="Add a new name">
@@ -421,6 +456,33 @@
     <div class="actions">
       <button class="btn dangerfill" id="delGo" onclick="confirmDelete()">Delete</button>
       <button class="btn plain" onclick="closeDel()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="splitModal" onclick="if (event.target === this) this.classList.remove('on')">
+  <div class="sheet">
+    <h3>Set the split</h3>
+    <div class="sum" id="splitSum"></div>
+    <label>My share (₹)</label>
+    <input id="splitAmt" type="number" inputmode="numeric" min="0" step="1">
+    <div class="sum" id="splitNote" style="margin-top:6px"></div>
+    <div class="actions">
+      <button class="btn primary" onclick="confirmSplit()">Save split</button>
+      <button class="btn plain" onclick="$('splitModal').classList.remove('on')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="settleModal" onclick="if (event.target === this) this.classList.remove('on')">
+  <div class="sheet">
+    <h3>Settle with colleague</h3>
+    <div class="sum" id="settleSum"></div>
+    <label>Paid on</label>
+    <input id="settleDt" type="date">
+    <div class="actions">
+      <button class="btn primary" onclick="confirmSettle()">Mark settled</button>
+      <button class="btn plain" onclick="$('settleModal').classList.remove('on')">Cancel</button>
     </div>
   </div>
 </div>
@@ -498,7 +560,7 @@ function call(fn, ...args) {
 function setBrand(name, cred) {
   $('docName').textContent = name || 'Case Tracker';
   // "MBBS, MD · Anaesthesiologist" → the dot gets the softer style
-  $('docCred').innerHTML = esc(cred || '').replace(/\s*·\s*/g, ' <i>·</i> ');
+  $('docCred').innerHTML = esc(cred || '').replace(/\s*[·|]\s*/g, ' <i>·</i> ');
   const words = (name || 'Case Tracker').replace(/^(dr\.?|prof\.?)\s+/i, '').split(/\s+/).filter(w => /^[A-Za-z]/.test(w));
   $('mono').textContent = ((words[0] || 'C')[0] + (words.length > 1 ? words[words.length - 1][0] : '')).toUpperCase();
   document.title = name ? name + ' · Cases' : 'Case Tracker';
@@ -506,10 +568,13 @@ function setBrand(name, cred) {
 
 /* ---------- data ---------- */
 function apply(d) {
-  S.lists = d.lists; S.records = d.records; S.lastHospital = d.lastHospital; S.fyStartMonth = d.fyStartMonth || 4;
+  S.lists = d.lists; S.records = d.records;
+  S.records.forEach(r => { r.kind = r.shared ? 'Shared' : 'Independent'; r.roleLabel = r.shared ? (r.role === 'Handed over' ? 'Handed over' : 'Took over') : ''; }); S.lastHospital = d.lastHospital; S.fyStartMonth = d.fyStartMonth || 4;
   if (d.ageing) S.ageing = d.ageing;
   if (d.overdueDays) S.overdueDays = d.overdueDays;
   setBrand(d.doctorName, d.credentials);
+  S.trackSettlements = d.trackSettlements !== false;
+  if ($('ledgerMenu')) $('ledgerMenu').style.display = S.trackSettlements ? '' : 'none';
   S.bulkConfirm = d.bulkConfirm || 20; S.undoSeconds = d.undoSeconds || 10; S.trashDays = d.trashDays || 30;
   fillSelects(); fillDashSelects(); renderRecords(); renderDash();
 }
@@ -538,14 +603,15 @@ function fillSelects() {
   opts($('caseType'), L.caseTypes, { placeholder: 'Select' });
   opts($('anaesthesia'), L.anaesthesia, { all: '—' });
   opts($('fHospital'), L.hospitals, { all: 'All hospitals' });
-  opts($('fStatus'), L.statuses, { all: 'All statuses' });
+  opts($('fStatus'), [...new Set([...L.statuses, 'Split pending'])], { all: 'All statuses' });
   opts($('urgency'), L.urgency.length ? L.urgency : ['Elective', 'Emergency']);
   opts($('gender'), L.genders && L.genders.length ? L.genders : ['Male', 'Female', 'Other'], { all: 'Select' });
   opts($('caseDesc'), L.caseDescs || [], { all: '—', addNew: true });
+  opts($('coAnaes'), L.coAnaes || [], { placeholder: 'Select', addNew: true });
   opts($('payMode'), L.payModes.length ? L.payModes : ['Cash', 'UPI', 'NEFT/RTGS transfer', 'Cheque'], { all: 'Select' });
 }
 
-['hospital', 'surgeon', 'caseDesc'].forEach(id => $(id).addEventListener('change', () => {
+['hospital', 'surgeon', 'caseDesc', 'coAnaes'].forEach(id => $(id).addEventListener('change', () => {
   const isNew = $(id).value === NEW;
   $(id + 'New').style.display = isNew ? 'block' : 'none';
   if (isNew) $(id + 'New').focus();
@@ -558,14 +624,15 @@ $('paid').addEventListener('change', () => {
   const on = $('paid').checked;
   $('payBox').style.display = on ? 'block' : 'none';
   if (on) {
-    if (!$('received').value) $('received').value = $('fee').value;
+    if (!$('received').value && expectedNow()) $('received').value = expectedNow();
     if (!$('payDate').value) $('payDate').value = today();
   }
   overWarn();
 });
 function overWarn() {
   const f = Number($('fee').value) || 0, r = Number($('received').value) || 0;
-  $('overWarn').style.display = $('paid').checked && f > 0 && r > f ? 'block' : 'none';
+  const e = $('sharedTgl') && $('sharedTgl').checked ? expectedNow() : f;
+  $('overWarn').style.display = $('paid').checked && e > 0 && r > e ? 'block' : 'none';
 }
 
 /* Suggest the last fee charged for the same hospital + case type */
@@ -582,6 +649,48 @@ function feeHint() {
 }
 $('feeHint').addEventListener('click', () => { $('fee').value = $('feeHint').dataset.fee; overWarn(); });
 
+
+
+/* ---------- shared cases ---------- */
+const SEG2 = { role: '', collector: '' };
+function setSeg2(id, v) {
+  SEG2[id] = v;
+  [...$(id).children].forEach(b => b.classList.toggle('on', b.dataset.v === v));
+  sharedUI();
+}
+// What Dad earns, has received, is owed, and owes — for any case
+function money(r) {
+  const shared = !!r.shared, shareSet = r.myShare !== '' && r.myShare != null;
+  const sharePending = shared && !shareSet;
+  const earn = !shared ? r.fee : (shareSet ? Number(r.myShare) : null);
+  let got;
+  if (!shared || r.collector !== 'Me') got = r.received;
+  else got = earn == null ? null : (r.fee ? r.received * earn / r.fee : 0);   // Dad's part of what he collected
+  const off = r.status === 'Written off';
+  const due = earn == null || off ? 0 : Math.max(earn - (got || 0), 0);
+  const coShare = shared && shareSet ? r.fee - earn : 0;
+  const owedTo = shared && r.collector === 'Me' && shareSet && !r.settledOn && r.fee ? Math.round(r.received * coShare / r.fee) : 0;
+  const owedBy = shared && r.collector === 'Colleague' && shareSet && !off ? Math.max(earn - r.received, 0) : 0;
+  return { sharePending, earn, got, due, coShare, owedTo, owedBy };
+}
+function sharedUI() {
+  const on = $('sharedTgl').checked;
+  $('sharedBox').style.display = on ? '' : 'none';
+  $('coLabel').innerHTML = (SEG2.role === 'Handed over' ? 'Handed over to' : SEG2.role === 'Took over' ? 'Took over from' : 'Co-anaesthesiologist') + ' <span class="req">*</span>';
+  const fee = Number($('fee').value) || 0, sh = $('myShare').value;
+  $('shareNote').textContent = !on ? '' : sh === '' ? 'Split not decided — the case will show as "Split pending" until you set it.'
+    : (Number(sh) > fee ? 'Your share is more than the fee.' : `Colleague's share: ${inr(fee - Number(sh))}`);
+  $('settledBox').style.display = on && SEG2.collector === 'Me' && S.trackSettlements && sh !== '' ? '' : 'none';
+  $('paidLabel').textContent = on && SEG2.collector === 'Colleague' ? 'Received my share from colleague?' : 'Paid already?';
+}
+function expectedNow() {
+  const fee = Number($('fee').value) || 0;
+  if (!$('sharedTgl').checked || SEG2.collector === 'Me') return fee;
+  return $('myShare').value === '' ? 0 : Number($('myShare').value);
+}
+$('sharedTgl').addEventListener('change', sharedUI);
+$('myShare').addEventListener('input', sharedUI);
+$('fee').addEventListener('input', sharedUI);
 
 /* ---------- scheme + risk notes ---------- */
 let SCHEME = 'Private', RISKS = [];
@@ -650,6 +759,9 @@ function resetForm(keepHospital) {
   $('surgeon').value = ''; $('caseType').value = '';
   ['hospitalNew', 'surgeonNew', 'caseDescNew'].forEach(i => { $(i).value = ''; $(i).style.display = 'none'; });
   $('caseDesc').value = ''; setScheme('Private'); RISKS = []; renderRisks();
+  $('sharedTgl').checked = false; SEG2.role = ''; SEG2.collector = ''; setSeg2('role', ''); setSeg2('collector', '');
+  $('coAnaes').value = ''; $('coAnaesNew').value = ''; $('coAnaesNew').style.display = 'none'; $('myShare').value = ''; $('settledOn').value = '';
+  sharedUI();
   $('payBox').style.display = 'none'; $('more').open = false;
   $('saveAddBtn').style.display = ''; $('cancelBtn').style.display = 'none'; $('delCaseBtn').style.display = 'none';
   $('saveBtn').textContent = 'Save';
@@ -672,6 +784,12 @@ function readForm() {
     caseDesc: pick('caseDesc'),
     scheme: SCHEME,
     riskNotes: commitRiskInput(),
+    shared: $('sharedTgl').checked,
+    role: SEG2.role,
+    coAnaes: $('sharedTgl').checked ? pick('coAnaes') : '',
+    collector: SEG2.collector,
+    myShare: $('sharedTgl').checked ? $('myShare').value : '',
+    settledOn: $('settledBox').style.display === 'none' ? '' : $('settledOn').value,
     anaesthesia: $('anaesthesia').value,
     urgency: $('urgency').value,
     duration: $('duration').value,
@@ -692,6 +810,9 @@ function checkForm(c) {
   if (c.age === '') miss.push('age');
   if (!c.gender) miss.push('gender');
   if (!c.scheme) miss.push('Yojana / Private');
+  if (c.shared && !c.role) miss.push('took over / handed over');
+  if (c.shared && !c.coAnaes) miss.push('co-anaesthesiologist');
+  if (c.shared && !c.collector) miss.push('who collects');
   if (!c.hospital) miss.push('hospital');
   if (!c.surgeon) miss.push('surgeon');
   if (!c.caseType) miss.push('case type');
@@ -699,6 +820,7 @@ function checkForm(c) {
   if (miss.length) return 'Please fill: ' + miss.join(', ');
   if (c.date > today()) return 'Date cannot be in the future';
   if (!(Number(c.age) >= 0 && Number(c.age) <= 120)) return 'Age must be between 0 and 120';
+  if (c.shared && c.myShare !== '' && !(Number(c.myShare) >= 0 && Number(c.myShare) <= Number(c.fee))) return 'Your share must be between 0 and the fee';
   if (Number(c.received) > 0 && !c.payMode) return 'Pick a payment mode';
   if (c.paid && !(Number(c.received) > 0)) return 'Enter the amount received, or turn off Paid already';
   if (Number(c.received) > 0 && !c.payDate) return 'Pick a payment date';
@@ -738,6 +860,11 @@ function edit(id) {
   if (r.caseDesc) setOrNew('caseDesc', r.caseDesc); else $('caseDesc').value = '';
   setScheme(r.scheme || 'Private');
   RISKS = (r.riskNotes || []).slice(); renderRisks();
+  $('sharedTgl').checked = !!r.shared;
+  setSeg2('role', r.role || ''); setSeg2('collector', r.collector || '');
+  if (r.coAnaes) setOrNew('coAnaes', r.coAnaes); else $('coAnaes').value = '';
+  $('myShare').value = r.myShare === '' || r.myShare == null ? '' : r.myShare;
+  $('settledOn').value = r.settledOn || '';
   $('urgency').value = r.urgency || 'Elective';
   $('fee').value = r.fee;
   const paid = r.received > 0;
@@ -746,6 +873,7 @@ function edit(id) {
   $('payMode').value = r.payMode || '';
   $('duration').value = r.duration; $('billNo').value = r.billNo; $('notes').value = r.notes;
   $('more').open = !!(r.duration || r.billNo || r.notes);
+  sharedUI();
   $('saveAddBtn').style.display = 'none'; $('cancelBtn').style.display = ''; $('delCaseBtn').style.display = '';
   $('saveBtn').textContent = 'Save changes';
   overWarn(); feeHint();
@@ -782,9 +910,9 @@ function renderRecords() {
     ? S.records.filter(r => DRILL.ids.has(r.id))
     : S.records.filter(r => r.date >= from && r.date <= to)
         .filter(r => !h || r.hospital === h)
-        .filter(r => !st || r.status === st);
+        .filter(r => !st || (st === 'Split pending' ? money(r).sharePending : r.status === st));
   const rows = base
-    .filter(r => !q || [r.patient, r.uhid, r.surgeon, r.hospital, r.id, r.billNo, r.caseDesc, (r.riskNotes || []).join(' ')].join(' ').toLowerCase().includes(q))
+    .filter(r => !q || [r.patient, r.uhid, r.surgeon, r.hospital, r.id, r.billNo, r.caseDesc, (r.riskNotes || []).join(' '), r.coAnaes].join(' ').toLowerCase().includes(q))
     .sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
 
   $('kCases').textContent = rows.length;
@@ -801,8 +929,9 @@ function renderRecords() {
       <div class="meta">${nice(r.date)} · ${esc(r.hospital)}</div>
       <span class="badge b-${esc(String(r.status).split(' ')[0])}">${esc(r.status)}</span>
       <div class="meta">${esc(r.caseType)}${r.caseDesc ? ' – ' + esc(r.caseDesc) : ''} · ${esc(r.surgeon)}${r.scheme === 'Yojana' ? ' · <b style="color:var(--accent);font-weight:600">Yojana</b>' : ''}</div>
-      <div class="meta r" style="text-align:right">${open(r) ? 'Due ' + inr(r.balance) : esc(r.id)}</div>
-      ${!SEL_MODE && open(r) ? `<div class="payrow"><button class="paybtn" onclick="event.stopPropagation();openPay(['${esc(r.id)}'])">Mark paid</button></div>` : ''}
+      <div class="meta r" style="text-align:right">${open(r) ? 'Due ' + inr(r.balance) : r.status === 'Split pending' ? '' : esc(r.id)}</div>
+      ${r.shared ? `<div class="meta" style="grid-column:1/-1">${r.role === 'Handed over' ? 'Handed over to' : 'Took over from'} ${esc(r.coAnaes)} · ${r.collector === 'Me' ? 'I collect' : r.collector === 'Colleague' ? 'Colleague collects' : 'Paid separately'}${money(r).earn != null ? ` · my share ${inr(money(r).earn)}` : ' · <b style="color:var(--o3)">split pending</b>'}${S.trackSettlements && money(r).owedTo ? ` · <b style="color:var(--bad)">I owe ${inr(money(r).owedTo)}</b>` : ''}</div>` : ''}
+      ${!SEL_MODE ? cardActions(r) : ''}
     </div>`).join('') : '<div class="empty">No cases match these filters.</div>';
   updateSelUI();
 }
@@ -812,8 +941,9 @@ function renderRecords() {
 let DRILL = null;      // { label, ids } set when a chart is tapped
 let EARN_BY = 'hospital';
 const DIMS = [['dHospital', 'hospital', 'Hospital'], ['dCaseType', 'caseType', 'Case type'], ['dSurgeon', 'surgeon', 'Surgeon'],
-  ['dStatus', 'status', 'Status'], ['dPayMode', 'payMode', 'Mode'], ['dUrgency', 'urgency', ''], ['dGender', 'gender', ''], ['dScheme', 'scheme', '']];
-const STATUS_COLOR = { 'Paid': 'var(--st-good)', 'Partially paid': 'var(--st-warn)', 'Pending': 'var(--st-crit)', 'Written off': 'var(--st-off)' };
+  ['dStatus', 'status', 'Status'], ['dPayMode', 'payMode', 'Mode'], ['dUrgency', 'urgency', ''], ['dGender', 'gender', ''], ['dScheme', 'scheme', ''],
+  ['dKind', 'kind', ''], ['dCo', 'coAnaes', 'With'], ['dRole', 'roleLabel', '']];
+const STATUS_COLOR = { 'Paid': 'var(--st-good)', 'Partially paid': 'var(--st-warn)', 'Pending': 'var(--st-crit)', 'Split pending': 'var(--o2)', 'Written off': 'var(--st-off)' };
 const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const sel = id => [...$(id).selectedOptions].map(o => o.value);
 const sum = (a, f) => a.reduce((s, r) => s + f(r), 0);
@@ -826,7 +956,8 @@ function fillDashSelects() {
   const src = { dHospital: L.hospitals, dCaseType: L.caseTypes, dSurgeon: L.surgeons, dStatus: L.statuses,
     dPayMode: L.payModes, dUrgency: L.urgency.length ? L.urgency : ['Elective', 'Emergency'],
     dGender: L.genders && L.genders.length ? L.genders : ['Male', 'Female', 'Other'],
-    dScheme: L.schemes && L.schemes.length ? L.schemes : ['Private', 'Yojana'] };
+    dScheme: L.schemes && L.schemes.length ? L.schemes : ['Private', 'Yojana'],
+    dKind: ['Independent', 'Shared'], dCo: L.coAnaes || [], dRole: ['Took over', 'Handed over'] };
   Object.entries(src).forEach(([id, items]) => {
     const keep = sel(id);
     // include values used in records but missing from Lists, so nothing is unfilterable
@@ -895,7 +1026,8 @@ function hbars(items, color, field, noun) {
     return `<div class="hrow ${field ? 'tap' : ''}" ${click}>
       <div class="lb">${esc(i.label)}</div>
       <div><div class="bar" style="width:${(i.value / max * 100).toFixed(1)}%;background:${i.color || color}"></div></div>
-      <div class="v">${inr(i.value)}${i.note ? `<small>${esc(i.note)}</small>` : ''}</div></div>`;
+      <div class="v">${inr(i.value)}${i.note ? `<small>${esc(i.note)}</small>` : ''}</div>
+      ${i.sub ? `<div style="grid-column:1/-1;font-size:12px;color:var(--muted);margin-top:-2px">${esc(i.sub)}</div>` : ''}</div>`;
   }).join('');
 }
 
@@ -906,6 +1038,29 @@ function share(parts) {
       `<div style="width:${(p.count / total * 100).toFixed(2)}%;background:${p.color}" ${p.click}></div>`).join('')}</div>
     <div class="legend">${parts.filter(p => p.count).map(p =>
       `<span ${p.click}><i style="background:${p.color}"></i>${esc(p.label)} ${p.count} <em>· ${pct(p.count / total)} · ${inr(p.amount)}</em></span>`).join('')}</div>`;
+}
+
+// Two-to-four part donut with a centre figure; segments and legend are tappable
+function donut(parts, centreWord, centreShare) {
+  const total = parts.reduce((s, p) => s + p.count, 0);
+  if (!total) return '<div class="sub">Nothing to show.</div>';
+  const R = 52, C = 2 * Math.PI * R, gap = parts.filter(p => p.count).length > 1 ? 2 : 0;
+  let off = 0;
+  const segs = parts.filter(p => p.count).map(p => {
+    const len = p.count / total * C;
+    const seg = `<circle cx="70" cy="70" r="${R}" fill="none" stroke="${p.color}" stroke-width="22"
+      stroke-dasharray="${Math.max(len - gap, 0.1)} ${C}" stroke-dashoffset="${-off}" transform="rotate(-90 70 70)" ${p.click} style="cursor:pointer"></circle>`;
+    off += len; return seg;
+  }).join('');
+  return `<div style="display:flex;align-items:center;gap:16px">
+    <svg viewBox="0 0 140 140" width="132" height="132" role="img" aria-label="${esc(parts.map(p => p.label + ' ' + p.count).join(', '))}" style="flex:none">
+      ${segs}
+      <text x="70" y="68" pointer-events="none" text-anchor="middle" font-size="22" font-weight="700" fill="var(--ink)">${Math.round(centreShare * 100)}%</text>
+      <text x="70" y="86" pointer-events="none" text-anchor="middle" font-size="11" fill="var(--muted)">${esc(centreWord)}</text>
+    </svg>
+    <div class="legend" style="flex-direction:column;gap:10px;margin:0">${parts.filter(p => p.count).map(p =>
+      `<span ${p.click}><i style="background:${p.color}"></i><b style="font-weight:600">${esc(p.label)}</b> ${p.count} <em>· ${pct(p.count / total)}<br><span style="margin-left:15px">${inr(p.amount)}</span></em></span>`).join('')}</div>
+  </div>`;
 }
 
 function card(title, sub, body) {
@@ -924,20 +1079,30 @@ function renderDash() {
   const nF = DIMS.filter(([id]) => sel(id).length).length;
   $('dMoreBtn').textContent = nF ? `Filters (${nF})` : 'Filters';
 
-  // KPI tiles
-  const billed = sum(rows, r => r.fee), collected = sum(rows, r => r.received);
-  const open = rows.filter(isOpen), outstanding = sum(open, r => r.balance);
-  const od = S.overdueDays, overdue = open.filter(r => age(r) > od), overdueAmt = sum(overdue, r => r.balance);
+  // KPI tiles — all on Dad's share for shared cases; undecided splits are counted separately
+  const E = r => money(r).earn || 0, G = r => money(r).got || 0, DUE = r => money(r).due;
+  const isOpenMine = r => r.status !== 'Written off' && DUE(r) > 0;
+  const nEarn = rows.filter(r => money(r).earn != null).length;
+  const pend = rows.filter(r => money(r).sharePending);
+  const owedTo = sum(rows, r => money(r).owedTo), owedBy = sum(rows, r => money(r).owedBy);
+  const billed = sum(rows, E), collected = sum(rows, G);
+  const open = rows.filter(isOpenMine), outstanding = sum(open, DUE);
+  const od = S.overdueDays, overdue = open.filter(r => age(r) > od), overdueAmt = sum(overdue, DUE);
   $('dTiles').innerHTML = [
-    ['Total billed', inr(billed), ''],
+    ['My billing', inr(billed), ''],
     ['Collected', inr(collected), ''],
-    ['Outstanding', inr(outstanding), dr('Outstanding', isOpen)],
+    ['Outstanding', inr(outstanding), dr('Outstanding', isOpenMine)],
     ['Cases', rows.length, ''],
-    ['Avg fee per case', rows.length ? inr(billed / rows.length) : '—', ''],
+    ['Avg fee per case', nEarn ? inr(billed / nEarn) : '—', ''],
     ['Collection rate', billed ? pct(collected / billed) : '—', ''],
     [`Overdue ${od}+ days (${overdue.length})`, inr(overdueAmt),
-      overdue.length ? dr(`Overdue ${od}+ days`, r => isOpen(r) && age(r) > od) : '', overdueAmt > 0 ? 'alert' : ''],
-    ['Emergency cases', rows.filter(r => r.urgency === 'Emergency').length, '']
+      overdue.length ? dr(`Overdue ${od}+ days`, r => isOpenMine(r) && age(r) > od) : '', overdueAmt > 0 ? 'alert' : ''],
+    ['Emergency cases', rows.filter(r => r.urgency === 'Emergency').length, ''],
+    ...(rows.some(r => r.shared) ? [['Earnings from shared cases', inr(sum(rows.filter(r => r.shared), E)), dr('Shared cases', r => r.shared)]] : []),
+    ...(pend.length ? [[`Split pending (${pend.length})`, inr(sum(pend, r => r.fee)) + '<small style="font-size:12px;font-weight:400;color:var(--muted)"> fees</small>', dr('Split pending', r => money(r).sharePending)]] : []),
+    ...(S.trackSettlements && (owedTo || owedBy) ? [
+      ['I owe colleagues', inr(owedTo), owedTo ? `onclick="openLedger()"` : ''],
+      ['Colleagues owe me', inr(owedBy), owedBy ? `onclick="openLedger()"` : '']] : [])
   ].map(([l, v, click, cls]) => `<div class="tile ${click ? 'tap' : ''} ${cls || ''}" ${click}><b>${v}</b><span>${esc(l)}</span></div>`).join('');
 
   if (!rows.length) {
@@ -950,7 +1115,7 @@ function renderDash() {
   const months = [...new Set(rows.map(r => r.date.slice(0, 7)))].sort().slice(-12);
   const mData = months.map(m => {
     const mr = rows.filter(r => r.date.startsWith(m));
-    return { m, billed: sum(mr, r => r.fee), coll: sum(mr, r => r.received), n: mr.length };
+    return { m, billed: sum(mr, E), coll: sum(mr, G), n: mr.length };
   });
   const mMax = Math.max(...mData.map(d => d.billed), 1);
   const multiYear = new Set(months.map(m => m.slice(0, 4))).size > 1;
@@ -969,16 +1134,16 @@ function renderDash() {
 
   // 2. Outstanding by hospital
   out.push(card('Outstanding by hospital', `Who owes how much · ${open.length} unpaid cases`,
-    hbars(topN(group(open, 'hospital', r => r.balance), 8), 'var(--s1)', 'hospital', 'Outstanding at')));
+    hbars(topN(group(open, 'hospital', DUE), 8), 'var(--s1)', 'hospital', 'Outstanding at')));
   // make outstanding drill only show unpaid cases
-  DRILLS.forEach(d => { if (d[0].startsWith('Outstanding at')) { const t = d[1]; d[1] = r => isOpen(r) && t(r); } });
+  DRILLS.forEach(d => { if (d[0].startsWith('Outstanding at')) { const t = d[1]; d[1] = r => isOpenMine(r) && t(r); } });
 
   // 3. Earnings by hospital / case type / surgeon
   const byLabel = { hospital: 'Hospital', caseType: 'Case type', surgeon: 'Surgeon' };
-  out.push(card('Earnings by ' + byLabel[EARN_BY].toLowerCase(), 'Fees billed, largest first', `
+  out.push(card('Earnings by ' + byLabel[EARN_BY].toLowerCase(), 'My billing, largest first', `
     <div class="seglite">${Object.entries(byLabel).map(([k, l]) =>
       `<button class="${k === EARN_BY ? 'on' : ''}" onclick="EARN_BY='${k}';renderDash()">${l}</button>`).join('')}</div>
-    ${hbars(topN(group(rows, EARN_BY, r => r.fee), 8).map(i => {
+    ${hbars(topN(group(rows, EARN_BY, E), 8).map(i => {
       const keys = i.keys || [i.key];
       const n = rows.filter(r => keys.includes(r[EARN_BY] || '—')).length;
       return { ...i, note: n + (n === 1 ? ' case' : ' cases') };
@@ -994,39 +1159,69 @@ function renderDash() {
   ];
   const bItems = buckets.map(([l, t, c]) => {
     const br = open.filter(t);
-    return { label: l, value: sum(br, r => r.balance), color: c, note: br.length + (br.length === 1 ? ' case' : ' cases'), test: t };
+    return { label: l, value: sum(br, DUE), color: c, note: br.length + (br.length === 1 ? ' case' : ' cases'), test: t };
   });
   const bMax = Math.max(...bItems.map(i => i.value), 1);
   out.push(card('Ageing of dues', 'Unpaid amount by days since surgery', bItems.map(i => `
-    <div class="hrow tap" ${dr('Dues ' + i.label, r => isOpen(r) && i.test(r))}>
+    <div class="hrow tap" ${dr('Dues ' + i.label, r => isOpenMine(r) && i.test(r))}>
       <div class="lb">${esc(i.label)}</div>
       <div><div class="bar" style="width:${(i.value / bMax * 100).toFixed(1)}%;background:${i.color}"></div></div>
       <div class="v">${inr(i.value)}<small>${esc(i.note)}</small></div></div>`).join('')));
 
   // 5. Payment status split
-  out.push(card('Payment status', 'Share of cases · amount is fee for Paid, balance due for the rest', share(
-    ['Paid', 'Partially paid', 'Pending', 'Written off'].map(st => {
+  out.push(card('Payment status', 'Share of cases · amount is my billing for Paid, still due for the rest', share(
+    ['Paid', 'Partially paid', 'Pending', 'Split pending', 'Written off'].map(st => {
       const sr = rows.filter(r => r.status === st);
-      return { label: st, count: sr.length, amount: st === 'Paid' ? sum(sr, r => r.fee) : sum(sr, r => Math.max(r.balance, 0)),
+      return { label: st, count: sr.length, amount: st === 'Paid' ? sum(sr, E) : st === 'Split pending' ? sum(sr, r => r.fee) : sum(sr, DUE),
         color: STATUS_COLOR[st], click: dr('Status: ' + st, r => r.status === st) };
     }))));
 
   // 6. Elective vs emergency
-  out.push(card('Elective vs emergency', 'Share of cases · amount is fees billed', share(
+  out.push(card('Elective vs emergency', 'Share of cases · amount is my billing', share(
     ['Elective', 'Emergency'].map((u, i) => {
       const ur = rows.filter(r => (r.urgency || 'Elective') === u);
-      return { label: u, count: ur.length, amount: sum(ur, r => r.fee), color: i ? 'var(--s2)' : 'var(--s1)',
+      return { label: u, count: ur.length, amount: sum(ur, E), color: i ? 'var(--s2)' : 'var(--s1)',
         click: dr(u, r => (r.urgency || 'Elective') === u) };
     }))));
 
   // 6b. Yojana vs private
   const sParts = ['Private', 'Yojana'].map((sc, i) => {
     const sr = rows.filter(r => r.scheme === sc);
-    return { label: sc, count: sr.length, amount: sum(sr, r => r.fee), color: i ? 'var(--s2)' : 'var(--s1)', click: dr(sc, r => r.scheme === sc) };
+    return { label: sc, count: sr.length, amount: sum(sr, E), color: i ? 'var(--s2)' : 'var(--s1)', click: dr(sc, r => r.scheme === sc) };
   });
   const noS = rows.filter(r => !r.scheme);
-  if (noS.length) sParts.push({ label: 'Not recorded', count: noS.length, amount: sum(noS, r => r.fee), color: '#d6d8dc', click: dr('Scheme not recorded', r => !r.scheme) });
-  out.push(card('Yojana vs private', 'Share of cases · amount is fees billed', share(sParts)));
+  if (noS.length) sParts.push({ label: 'Not recorded', count: noS.length, amount: sum(noS, E), color: '#d6d8dc', click: dr('Scheme not recorded', r => !r.scheme) });
+  out.push(card('Yojana vs private', 'Share of cases · amount is my billing', share(sParts)));
+
+  // 6c. Shared vs independent (donut), shared-case summary, by colleague
+  const shr = rows.filter(r => r.shared), ind = rows.filter(r => !r.shared);
+  if (shr.length) {
+    out.push(card('Shared vs independent', 'Share of cases · amount is my billing', donut([
+      { label: 'Independent', count: ind.length, amount: sum(ind, E), color: 'var(--s1)', click: dr('Independent cases', r => !r.shared) },
+      { label: 'Shared', count: shr.length, amount: sum(shr, E), color: 'var(--s2)', click: dr('Shared cases', r => r.shared) }
+    ], 'shared', shr.length / rows.length)));
+
+    const agreed = shr.filter(r => !money(r).sharePending);
+    const feeA = sum(agreed, r => r.fee), mineA = sum(agreed, E);
+    const took = shr.filter(r => r.roleLabel === 'Took over'), hand = shr.filter(r => r.roleLabel === 'Handed over');
+    out.push(card('Shared cases', `${shr.length} cases · ${agreed.length} with the split agreed`, `
+      <div class="tiles" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:12px">
+        <div class="tile"><b>${feeA ? Math.round(mineA / feeA * 100) + '%' : '—'}</b><span>My average share</span></div>
+        <div class="tile"><b>${inr(mineA)}</b><span>Kept</span></div>
+        <div class="tile"><b>${inr(feeA - mineA)}</b><span>Passed to colleagues</span></div>
+      </div>
+      ${share([
+        { label: 'I took over', count: took.length, amount: sum(took, E), color: 'var(--o2)', click: dr('I took over', r => r.roleLabel === 'Took over') },
+        { label: 'I handed over', count: hand.length, amount: sum(hand, E), color: 'var(--o4)', click: dr('I handed over', r => r.roleLabel === 'Handed over') }
+      ])}`));
+
+    out.push(card('By colleague', 'My billing on cases shared with each colleague', hbars(topN(group(shr, 'coAnaes', E), 8).map(i => {
+      const keys = i.keys || [i.key], cr = shr.filter(r => keys.includes(r.coAnaes || '—'));
+      const to = sum(cr, r => money(r).owedTo), by = sum(cr, r => money(r).owedBy);
+      const bal = !S.trackSettlements ? '' : to && by ? `I owe ${inr(to)} · owes me ${inr(by)}` : to ? `I owe ${inr(to)}` : by ? `Owes me ${inr(by)}` : '';
+      return { ...i, note: cr.length + (cr.length === 1 ? ' case' : ' cases'), sub: bal };
+    }), 'var(--s2)', 'coAnaes', 'Shared with')));
+  }
 
   // 7. Age groups (ordered, so bars rather than a pie)
   const AGE_GROUPS = [['0–12', 0, 12], ['13–17', 13, 17], ['18–35', 18, 35], ['36–50', 36, 50], ['51–65', 51, 65], ['66+', 66, 999]];
@@ -1034,27 +1229,27 @@ function renderDash() {
   const aItems = AGE_GROUPS.map(([l, lo, hi], i) => {
     const t = r => hasAge(r) && r.age >= lo && (r.age < hi + 1);
     const ar = rows.filter(t);
-    return { label: l, count: ar.length, fees: sum(ar, r => r.fee), test: t, color: ['var(--o1)', 'var(--o1)', 'var(--o2)', 'var(--o2)', 'var(--o3)', 'var(--o4)'][i] };
+    return { label: l, count: ar.length, fees: sum(ar, E), test: t, color: ['var(--o1)', 'var(--o1)', 'var(--o2)', 'var(--o2)', 'var(--o3)', 'var(--o4)'][i] };
   });
   const noAge = rows.filter(r => !hasAge(r));
-  if (noAge.length) aItems.push({ label: 'Not recorded', count: noAge.length, fees: sum(noAge, r => r.fee), test: r => !hasAge(r), color: 'var(--st-off)' });
+  if (noAge.length) aItems.push({ label: 'Not recorded', count: noAge.length, fees: sum(noAge, E), test: r => !hasAge(r), color: 'var(--st-off)' });
   const aMax = Math.max(...aItems.map(i => i.count), 1);
-  out.push(card('Patients by age group', 'Number of cases · fees billed shown on the right', aItems.map(i => `
+  out.push(card('Patients by age group', 'Number of cases · my billing shown on the right', aItems.map(i => `
     <div class="hrow tap" ${dr('Age ' + i.label, i.test)}>
       <div class="lb">${esc(i.label)}${/^\d/.test(i.label) ? ' yrs' : ''}</div>
       <div><div class="bar" style="width:${(i.count / aMax * 100).toFixed(1)}%;background:${i.color}"></div></div>
       <div class="v">${i.count} ${i.count === 1 ? 'case' : 'cases'}<small>${inr(i.fees)}</small></div></div>`).join('')));
 
   // 8. Gender split
-  const G = S.lists.genders && S.lists.genders.length ? S.lists.genders : ['Male', 'Female', 'Other'];
+  const GEN = S.lists.genders && S.lists.genders.length ? S.lists.genders : ['Male', 'Female', 'Other'];
   const gCol = ['var(--s1)', 'var(--s2)', 'var(--st-off)'];
-  const gParts = G.map((g, i) => {
+  const gParts = GEN.map((g, i) => {
     const gr = rows.filter(r => r.gender === g);
-    return { label: g, count: gr.length, amount: sum(gr, r => r.fee), color: gCol[i] || 'var(--st-off)', click: dr(g, r => r.gender === g) };
+    return { label: g, count: gr.length, amount: sum(gr, E), color: gCol[i] || 'var(--st-off)', click: dr(g, r => r.gender === g) };
   });
   const noG = rows.filter(r => !r.gender);
-  if (noG.length) gParts.push({ label: 'Not recorded', count: noG.length, amount: sum(noG, r => r.fee), color: '#d6d8dc', click: dr('Gender not recorded', r => !r.gender) });
-  out.push(card('Gender', 'Share of cases · amount is fees billed', share(gParts)));
+  if (noG.length) gParts.push({ label: 'Not recorded', count: noG.length, amount: sum(noG, E), color: '#d6d8dc', click: dr('Gender not recorded', r => !r.gender) });
+  out.push(card('Gender', 'Share of cases · amount is my billing', share(gParts)));
 
   $('dCharts').innerHTML = out.join('');
 }
@@ -1162,6 +1357,97 @@ async function confirmPay() {
   }
 }
 
+
+
+/* ---------- card actions: Mark paid / Set split / Settle ---------- */
+function cardActions(r) {
+  const b = [];
+  if (money(r).sharePending) b.push(`<button class="paybtn" onclick="event.stopPropagation();openSplit('${esc(r.id)}')">Set split</button>`);
+  if (S.trackSettlements && money(r).owedTo) b.push(`<button class="paybtn" onclick="event.stopPropagation();openSettle(['${esc(r.id)}'])">Settle with colleague</button>`);
+  if (isDue(r)) b.push(`<button class="paybtn" onclick="event.stopPropagation();openPay(['${esc(r.id)}'])">Mark paid</button>`);
+  return b.length ? `<div class="payrow" style="gap:8px;flex-wrap:wrap">${b.join('')}</div>` : '';
+}
+
+let SPLIT = null, SETTLE = null;
+function openSplit(id) {
+  const r = byId(id); if (!r) return;
+  SPLIT = id;
+  $('splitSum').textContent = `${r.patient} · ${r.hospital} · ${r.role === 'Handed over' ? 'handed over to' : 'took over from'} ${r.coAnaes} · case fee ${inr(r.fee)}`;
+  $('splitAmt').value = ''; $('splitNote').textContent = '';
+  $('splitModal').classList.add('on');
+}
+$('splitAmt').addEventListener('input', () => {
+  const r = byId(SPLIT); if (!r) return;
+  const v = $('splitAmt').value;
+  $('splitNote').textContent = v === '' ? '' : Number(v) > r.fee ? 'More than the case fee.' : `Colleague's share: ${inr(r.fee - Number(v))}`;
+});
+async function confirmSplit() {
+  const v = $('splitAmt').value, r = byId(SPLIT);
+  if (v === '' || !(Number(v) >= 0 && Number(v) <= r.fee)) return toast('Enter your share (0 to ' + inr(r.fee) + ')', true);
+  busy(true, 'Saving…');
+  try { apply(await call('setSplit', SPLIT, Number(v))); $('splitModal').classList.remove('on'); toast('Split saved'); }
+  catch (e) { toast(e.message || String(e), true); }
+  finally { busy(false); }
+}
+
+function openSettle(ids) {
+  const recs = ids.map(byId).filter(r => r && money(r).owedTo);
+  if (!recs.length) return toast('Nothing to settle', true);
+  SETTLE = recs.map(r => r.id);
+  const who = [...new Set(recs.map(r => r.coAnaes))].join(', ');
+  $('settleSum').textContent = `Pay ${who} ${inr(sum(recs, r => money(r).owedTo))} for ${recs.length} case${recs.length === 1 ? '' : 's'}.`;
+  $('settleDt').value = today(); $('settleDt').max = today();
+  $('settleModal').classList.add('on');
+}
+async function confirmSettle() {
+  if (!$('settleDt').value) return toast('Pick a date', true);
+  busy(true, 'Saving…');
+  try {
+    const d = await call('settleColleague', SETTLE, $('settleDt').value);
+    apply(d); $('settleModal').classList.remove('on'); toast(`Settled ${d.settled} case${d.settled === 1 ? '' : 's'}`);
+    if (currentScreen === 'ledger') renderLedger();
+  } catch (e) { toast(e.message || String(e), true); }
+  finally { busy(false); }
+}
+
+/* ---------- colleague balances (ledger) ---------- */
+function openLedger() { go('ledger'); renderLedger(); }
+function renderLedger() {
+  const by = {};
+  S.records.forEach(r => {
+    if (!r.shared || !r.coAnaes) return;
+    const m = money(r), k = r.coAnaes;
+    by[k] = by[k] || { name: k, to: 0, toIds: [], by: 0, byIds: [], pending: 0, cases: 0 };
+    by[k].cases++;
+    if (m.owedTo) { by[k].to += m.owedTo; by[k].toIds.push(r.id); }
+    if (m.owedBy) { by[k].by += m.owedBy; by[k].byIds.push(r.id); }
+    if (m.sharePending) by[k].pending++;
+  });
+  const list = Object.values(by).sort((a, b) => (b.to + b.by) - (a.to + a.by) || a.name.localeCompare(b.name));
+  window._ledger = list;
+  $('ledgerList').innerHTML = list.length ? list.map((c, i) => `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:baseline"><b style="font-size:16px">${esc(c.name)}</b>
+        <span style="font-size:13px;color:var(--muted)">${c.cases} shared case${c.cases === 1 ? '' : 's'}</span></div>
+      <div class="hrow"><div class="lb">I owe</div><div></div><div class="v" style="color:${c.to ? 'var(--bad)' : 'inherit'}">${inr(c.to)}</div></div>
+      <div class="hrow"><div class="lb">Owes me</div><div></div><div class="v">${inr(c.by)}</div></div>
+      ${c.pending ? `<div style="font-size:13px;color:var(--o3)">${c.pending} split${c.pending === 1 ? '' : 's'} pending</div>` : ''}
+      <div class="payrow" style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:8px">
+        ${c.to ? `<button class="paybtn" onclick="openSettle(window._ledger[${i}].toIds)">Mark I've paid</button>` : ''}
+        ${c.by ? `<button class="paybtn" onclick="ledgerDrill(${i})">Record their payment</button>` : ''}
+        <button class="paybtn" style="border-color:var(--line);color:var(--muted)" onclick="ledgerCases(${i})">See cases</button>
+      </div>
+    </div>`).join('') : '<div class="empty">No shared cases yet.</div>';
+}
+function ledgerDrill(i) {
+  const c = window._ledger[i];
+  DRILL = { label: `${c.name} owes me`, ids: new Set(c.byIds) }; $('search').value = ''; go('records'); renderRecords();
+}
+function ledgerCases(i) {
+  const c = window._ledger[i];
+  DRILL = { label: `Shared with ${c.name}`, ids: new Set(S.records.filter(r => r.shared && r.coAnaes === c.name).map(r => r.id)) };
+  $('search').value = ''; go('records'); renderRecords();
+}
 
 /* ---------- delete, undo, trash ---------- */
 let DEL = null, UNDO = null, TRASH = [];
@@ -1276,7 +1562,7 @@ async function doPurge(ids, msg) {
 
 /* ---------- lists, export, backup ---------- */
 let LIST = 'hospitals';
-const LIST_NAMES = { hospitals: 'hospital', surgeons: 'surgeon', caseTypes: 'case type', caseDescs: 'case description', riskNotes: 'risk note' };
+const LIST_NAMES = { hospitals: 'hospital', surgeons: 'surgeon', caseTypes: 'case type', caseDescs: 'case description', riskNotes: 'risk note', coAnaes: 'colleague' };
 
 function openLists() { go('lists'); pickList(LIST); }
 function pickList(which) {
@@ -1337,12 +1623,12 @@ async function loadBackupInfo() {
 
 /* ---------- navigation ---------- */
 let currentScreen = 'add';
-const TITLES = { add: 'Add case', records: 'Records', dash: 'Dashboard', more: 'More', trash: 'Trash', lists: 'Manage lists' };
+const TITLES = { add: 'Add case', records: 'Records', dash: 'Dashboard', more: 'More', trash: 'Trash', lists: 'Manage lists', ledger: 'Colleague balances' };
 function setTitle(t) { $('title').textContent = t; }
 function go(s, title) {
   currentScreen = s;
   document.querySelectorAll('.screen').forEach(x => x.classList.toggle('on', x.id === 's-' + s));
-  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.s === (['trash', 'lists'].includes(s) ? 'more' : s)));
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.s === (['trash', 'lists', 'ledger'].includes(s) ? 'more' : s)));
   setTitle(title || (s === 'add' && S.editId ? 'Edit ' + S.editId : TITLES[s]));
   if (typeof updateSelUI === 'function' && $('selBtn')) updateSelUI();
   window.scrollTo(0, 0);
