@@ -30,6 +30,7 @@ Built for a freelance anaesthesiologist; it suits any doctor billing per case ac
 | **Records** | Search, filters, edit, one-tap **Mark paid** (full or partial), multi-select to settle a hospital's pending cases in one go, **Export** of the filtered view to Excel. |
 | **Dashboard** | Billed, collected, outstanding, collection rate, overdue dues; charts by month, hospital, case type, surgeon, ageing of dues, payment status, elective/emergency, Yojana/private, age group and gender. Every chart filters by period, hospital, case type, surgeon, status, payment mode and more; tapping a bar opens those cases. |
 | **Safe deletes** | Select and delete any filtered set of cases. They go to Trash for 30 days, with Undo, Restore and a typed confirmation for large deletes. |
+| **Dues statement** | On the 1st of each month (or on demand from More), a PDF of what each hospital owes is emailed and saved to Drive. Optional: one ready-to-forward PDF per hospital, and a totals-only WhatsApp summary via the free [CallMeBot](https://www.callmebot.com/blog/free-api-whatsapp-messages/) personal API. |
 | **Backups** | One-tap and automatic monthly Excel backups to Google Drive (newest 12 kept). |
 | **Access** | Only the Google accounts listed in Settings can open the app or the data. |
 
@@ -51,8 +52,8 @@ iPhone / Android browser  ──►  Google Apps Script web app  ──►  Goog
 
 1. **Create the database.** Upload [`template/case_tracker_backend.xlsx`](template/case_tracker_backend.xlsx) to Google Drive and open it with Google Sheets. It is saved as a Google Sheet. Delete example row 2 on the Cases tab.
 2. **Add the code.** In the Sheet, open **Extensions → Apps Script**. Replace `Code.gs` with [`src/Code.gs`](src/Code.gs). Add an HTML file named `Index` and paste in [`src/Index.html`](src/Index.html). In Project Settings, set the time zone.
-3. **Run setup once.** In the function dropdown, run `setupSheet` (dropdowns and settings rows), then `installTriggers` (nightly clean-up and monthly backup). Approve the permissions: *Advanced → Go to project → Allow*.
-4. **Fill the Settings tab.** Enter the doctor name and credentials (shown at the top of every screen), the owner and editor emails (only these accounts get in), and the Hospitals and Surgeons on the Lists tab.
+3. **Run setup once.** In the function dropdown, run `setupSheet` (dropdowns and settings rows), then `installTriggers` (nightly Trash clean-up, monthly backup and monthly dues statement). Approve the permissions: *Advanced → Go to project → Allow*.
+4. **Fill the Settings tab.** Enter the doctor name and credentials (shown at the top of every screen), the owner and editor emails (only these accounts get in), the statement email, and the Hospitals and Surgeons on the Lists tab.
 5. **Deploy.** Go to **Deploy → New deployment → Web app**, with *Execute as: User accessing the web app* and *Who has access: Anyone with Google account*. Copy the `/exec` URL.
 6. **Install on the phone.** Open the URL in Safari or Chrome, sign in, and tap *Share → Add to Home Screen*.
 
@@ -83,7 +84,13 @@ clasp push
 | Undo banner | 10 seconds | Undo window after a delete |
 | Owner / editor email | blank | Once filled, only these accounts can use the app |
 | Backup folder name | Case Tracker Backups | Drive folder for backups |
+| Drive folders | — | Exports and statements are filed by year: `Case Tracker Exports/2026/`, `Case Tracker Statements/2026/` |
 | Doctor name / Credentials | blank | Header on every screen |
+| Monthly dues statement | On | Off = only when "Send dues statement now" is tapped |
+| Statement email | blank | Recipients of the PDF statement |
+| Statement WhatsApp number / CallMeBot API key | blank | Number that activated CallMeBot, with country code, and its key |
+| Per-hospital PDFs | Off | On = also one ready-to-forward PDF per hospital with each statement |
+| Payment details (for hospital statements) | blank | UPI ID / bank details printed on each hospital's statement |
 | Track colleague settlements | Yes | No = only record your final share on shared cases |
 
 ## Data model

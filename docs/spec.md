@@ -46,7 +46,7 @@ A Google Sheet holds the data, Apps Script serves a mobile web app, and only the
 | Add / Edit case | Entry form; edit mode adds Delete |
 | Records | Search and filters; Mark paid; Select → settle or delete in bulk; Export |
 | Dashboard | KPI tiles, charts and filters; tapping a chart opens the matching cases |
-| More | Manage lists, Trash, Back up now, Refresh |
+| More | Manage lists, Colleague balances, Trash, Send dues statement now, Back up now, Refresh |
 
 ## Rules
 
@@ -60,6 +60,8 @@ A Google Sheet holds the data, Apps Script serves a mobile web app, and only the
 | Delete | Moves rows to Trash; typed DELETE above the threshold; Undo for N seconds; restore any time before the purge |
 | Purge | Nightly trigger removes Trash rows older than the retention days |
 | Backup | Monthly trigger plus a button: full workbook as .xlsx in Drive, newest 12 kept |
+| Dues statement | 1st of each month (~9 am) plus a button: PDF of what each hospital owes (colleague-collected cases excluded), emailed with the PDF attached; optional per-hospital PDFs; optional WhatsApp totals via CallMeBot (no patient names) |
+| Drive layout | `Case Tracker Backups/` (flat), `Case Tracker Exports/<year>/`, `Case Tracker Statements/<year>/` (a dated subfolder per send only when per-hospital PDFs are on) |
 | Access | `checkAccess_()` allows only the Settings emails; the Sheet's own sharing is the second lock |
 | Concurrency | All writes take a script lock |
 
@@ -67,7 +69,7 @@ A Google Sheet holds the data, Apps Script serves a mobile web app, and only the
 
 | Function | Called from |
 |---|---|
-| `getInitData`, `saveCase`, `markPaid`, `setSplit`, `settleColleague`, `deleteCases`, `restoreCases`, `getTrash`, `purgeTrash`, `listUpdate`, `exportCases`, `backupNow`, `getBackupInfo` | The app |
-| `setupSheet`, `installTriggers` | Run once from the editor |
+| `getInitData`, `saveCase`, `markPaid`, `setSplit`, `settleColleague`, `deleteCases`, `restoreCases`, `getTrash`, `purgeTrash`, `listUpdate`, `exportCases`, `backupNow`, `getBackupInfo`, `sendStatementNow` | The app |
+| `setupSheet`, `installTriggers`, `testWhatsApp` | Run from the editor |
 | `migrateAddAgeGender`, `migrateAddCaseFields`, `migrateAddSharedCases` | Only for sheets created before those columns existed |
-| `purgeOldTrash`, `monthlyBackup` | Triggers |
+| `purgeOldTrash`, `monthlyBackup`, `monthlyStatement` | Triggers |

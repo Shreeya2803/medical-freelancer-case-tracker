@@ -96,7 +96,13 @@ function setupSheet() {
   const have = st.getRange(1, 1, Math.max(st.getLastRow(), 1), 1).getValues().map(r => String(r[0]).trim());
   [['Doctor name', '', 'Shown at the top of every screen, e.g. Dr. A. Sharma'],
    ['Credentials', '', 'Shown under the name, e.g. MBBS, MD · Anaesthesiologist'],
-   ['Track colleague settlements', 'Yes', 'Yes = track who owes whom on shared cases; No = only record the final share']].forEach(row => {
+   ['Track colleague settlements', 'Yes', 'Yes = track who owes whom on shared cases; No = only record the final share'],
+   ['Monthly dues statement', 'On', 'On = send on the 1st of each month (~9 am); Off = only when "Send now" is tapped'],
+   ['Statement email', '', 'Where the PDF statement is emailed; several addresses can be separated by commas'],
+   ['Statement WhatsApp number', '', 'With country code, no + or spaces, e.g. 919812345678 (must match the CallMeBot activation)'],
+   ['CallMeBot API key', '', 'From the CallMeBot WhatsApp reply after activation'],
+   ['Per-hospital PDFs', 'Off', 'On = also create one ready-to-forward PDF per hospital with each statement'],
+   ['Payment details (for hospital statements)', '', 'Optional: UPI ID / bank account shown on each hospital statement']].forEach(row => {
     if (!have.includes(row[0])) st.appendRow(row);
   });
   SpreadsheetApp.flush();
@@ -535,11 +541,12 @@ function purgeOldTrash() {
 // Run ONCE from the editor (select installTriggers → Run). Re-run after the Sheet changes owner.
 function installTriggers() {
   ScriptApp.getProjectTriggers()
-    .filter(t => ['purgeOldTrash', 'monthlyBackup'].includes(t.getHandlerFunction()))
+    .filter(t => ['purgeOldTrash', 'monthlyBackup', 'monthlyStatement'].includes(t.getHandlerFunction()))
     .forEach(t => ScriptApp.deleteTrigger(t));
   ScriptApp.newTrigger('purgeOldTrash').timeBased().everyDays(1).atHour(2).create();
   ScriptApp.newTrigger('monthlyBackup').timeBased().onMonthDay(1).atHour(3).create();
-  Logger.log('Scheduled: nightly Trash clean-up (~2 am) and a backup on the 1st of each month (~3 am).');
+  ScriptApp.newTrigger('monthlyStatement').timeBased().onMonthDay(1).atHour(9).create();
+  Logger.log('Scheduled: nightly Trash clean-up (~2 am), backup (~3 am) and dues statement (~9 am) on the 1st of each month.');
 }
 
 function rewriteTrash_(trash, keep) {
@@ -600,7 +607,7 @@ function exportCases(ids) {
     .sort((a, b) => (b[COL.date - 1] || 0) - (a[COL.date - 1] || 0));
   if (!rows.length) throw new Error('Those cases were not found. Refresh and try again.');
   const name = 'Cases export ' + Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd HHmm');
-  const file = writeXlsx_(name, [all[0]].concat(rows), folder_('Case Tracker Exports'));
+  const file = writeXlsx_(name, [all[0]].concat(rows), subfolder_(folder_('Case Tracker Exports'), Utilities.formatDate(new Date(), tz, 'yyyy')));
   return { url: file.getUrl(), name: file.getName(), count: rows.length };
 }
 
@@ -637,6 +644,11 @@ function folder_(name) {
   const it = DriveApp.getFoldersByName(name);
   return it.hasNext() ? it.next() : DriveApp.createFolder(name);
 }
+// A named folder inside `parent`, created the first time it's needed (e.g. a year folder)
+function subfolder_(parent, name) {
+  const it = parent.getFoldersByName(name);
+  return it.hasNext() ? it.next() : parent.createFolder(name);
+}
 
 function xlsxBlob_(spreadsheetId, name) {
   const url = 'https://docs.google.com/spreadsheets/d/' + spreadsheetId + '/export?format=xlsx';
@@ -664,6 +676,200 @@ function writeXlsx_(name, rows, folder) {
   const file = folder.createFile(xlsxBlob_(tmp.getId(), name));
   DriveApp.getFileById(tmp.getId()).setTrashed(true);
   return file;
+}
+
+
+/* ---------- Monthly hospital dues statement (PDF by email, summary on WhatsApp) ---------- */
+
+// Called from the app (More → Send dues statement now)
+function sendStatementNow() {
+  checkAccess_();
+  return sendStatement_();
+}
+// Trigger: 1st of each month (see installTriggers)
+function monthlyStatement() {
+  const on = String(getSettings_().map['Monthly dues statement'] || 'On').trim().toLowerCase();
+  if (on === 'off' || on === 'no') return;
+  sendStatement_();
+}
+// Run from the editor to check the WhatsApp set-up
+function testWhatsApp() {
+  const m = getSettings_().map;
+  const r = sendWhatsApp_(m, '✅ Case Tracker: WhatsApp is connected. Dues statements will arrive here.');
+  Logger.log(r);
+}
+
+// What each hospital owes Dad right now (cases a colleague collected are excluded — those are owed by the colleague)
+function hospitalDues_() {
+  const today = new Date();
+  return getRecords_().filter(r => {
+    if (r.status === 'Written off' || r.balance === '' || !(Number(r.balance) > 0)) return false;
+    if (String(r.shared) === 'true' || r.shared === true) return r.collector !== 'Colleague';
+    return true;
+  }).map(r => Object.assign(r, {
+    due: Number(r.balance),
+    days: Math.floor((today - new Date(r.date + 'T00:00:00')) / 864e5)
+  }));
+}
+
+function sendStatement_() {
+  const ss = ss_(), tz = ss.getSpreadsheetTimeZone(), m = getSettings_().map;
+  const dues = hospitalDues_();
+  const od = Number(m['Overdue threshold (days)']) || 60;
+  const asOf = Utilities.formatDate(new Date(), tz, 'd MMM yyyy');
+  const byH = {};
+  dues.forEach(r => { (byH[r.hospital] = byH[r.hospital] || []).push(r); });
+  const hosp = Object.keys(byH).map(h => {
+    const cs = byH[h].sort((a, b) => a.date.localeCompare(b.date));
+    return { name: h, cases: cs, due: cs.reduce((s, r) => s + r.due, 0), oldest: Math.max(...cs.map(r => r.days)),
+      overdue: cs.filter(r => r.days > od).reduce((s, r) => s + r.due, 0) };
+  }).sort((a, b) => b.due - a.due);
+  const total = hosp.reduce((s, h) => s + h.due, 0);
+
+  // 1. PDFs in Drive: one consolidated + one per hospital, in a dated folder
+  // Case Tracker Statements / <year> / file — a subfolder per send only when there are per-hospital PDFs
+  const stamp = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
+  const yearFolder = subfolder_(folder_('Case Tracker Statements'), Utilities.formatDate(new Date(), tz, 'yyyy'));
+  const perOn = /^(on|yes)$/i.test(String(m['Per-hospital PDFs'] || 'Off').trim());
+  const runFolder = perOn ? yearFolder.createFolder('Dues statement ' + stamp + ' ' + Utilities.formatDate(new Date(), tz, 'HHmm')) : yearFolder;
+  const toPdf = (html, name) => Utilities.newBlob(html, 'text/html', name + '.html').getAs('application/pdf').setName(name + '.pdf');
+  const pdf = toPdf(statementHtml_(hosp, total, asOf, od, m),
+    (perOn ? '00 Consolidated dues statement ' : 'Dues statement ') + stamp + ' ' + Utilities.formatDate(new Date(), tz, 'HHmm'));
+  const file = runFolder.createFile(pdf);
+  const perHosp = !perOn ? [] : hosp.map(h => {
+    const b = toPdf(hospitalHtml_(h, asOf, m), 'Statement - ' + h.name.replace(/[\\/:*?"<>|]/g, '') + ' - ' + stamp);
+    runFolder.createFile(b);
+    return b;
+  });
+  const owner = String(m['Owner email (Dad)'] || '').trim();
+  if (owner && owner.toLowerCase() !== Session.getEffectiveUser().getEmail().toLowerCase()) {
+    try { (perOn ? runFolder : file).addViewer(owner); } catch (e) { /* sharing is optional */ }
+  }
+
+  const result = { total, hospitals: hosp.length, cases: dues.length, pdf: file.getUrl(), folder: perOn ? runFolder.getUrl() : '',
+    files: 1 + perHosp.length, email: '', whatsapp: '' };
+
+  // 2. Email with the PDF attached
+  const to = String(m['Statement email'] || '').trim();
+  if (to) {
+    const rows = hosp.map(h => `<tr><td style="padding:6px 10px;border-bottom:1px solid #eee">${esc_(h.name)}</td>
+      <td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:right">${h.cases.length}</td>
+      <td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:right"><b>${inr_(h.due)}</b></td>
+      <td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:right">${h.oldest} days</td></tr>`).join('');
+    MailApp.sendEmail({
+      to, name: 'Case Tracker',
+      subject: `Dues statement · ${asOf} · ${inr_(total)} outstanding`,
+      htmlBody: `<div style="font-family:Arial,sans-serif;font-size:14px;color:#1c1f24">
+        <p>${esc_(String(m['Doctor name'] || 'Hello'))},</p>
+        <p>Hospital dues as of <b>${asOf}</b>: <b>${inr_(total)}</b> across ${dues.length} cases at ${hosp.length} hospitals.</p>
+        ${hosp.length ? `<table style="border-collapse:collapse;font-size:14px"><tr style="background:#1f4e78;color:#fff">
+          <th style="padding:6px 10px;text-align:left">Hospital</th><th style="padding:6px 10px">Cases</th>
+          <th style="padding:6px 10px">Due</th><th style="padding:6px 10px">Oldest</th></tr>${rows}</table>` : '<p>Nothing is outstanding. 🎉</p>'}
+        <p style="color:#6b7280">${perHosp.length ? 'Attached: the consolidated statement for review, plus one statement per hospital, ready to forward.'
+          : 'The case-by-case statement is attached as a PDF.'}
+          A copy is in Google Drive: <a href="${runFolder.getUrl()}">Case Tracker Statements</a>.</p></div>`,
+      attachments: [pdf].concat(perHosp)
+    });
+    result.email = to;
+  }
+
+  // 3. WhatsApp summary (totals only — no patient names leave Google)
+  const lines = [`*Dues statement — ${asOf}*`, `Total due: *${inr_(total)}* (${dues.length} case${dues.length === 1 ? '' : 's'})`, ''];
+  hosp.slice(0, 12).forEach((h, i) => lines.push(`${i + 1}. ${h.name}: ${inr_(h.due)} · ${h.cases.length} case${h.cases.length === 1 ? '' : 's'} · oldest ${h.oldest} days`));
+  if (hosp.length > 12) lines.push(`…and ${hosp.length - 12} more`);
+  if (!hosp.length) lines.push('Nothing is outstanding.');
+  lines.push('', perOn ? 'Consolidated + per-hospital PDFs: ' + runFolder.getUrl() : 'Full statement: ' + file.getUrl());
+  result.whatsapp = sendWhatsApp_(m, lines.join('\n'));
+  return result;
+}
+
+function sendWhatsApp_(m, text) {
+  const phone = String(m['Statement WhatsApp number'] || '').replace(/[^\d]/g, '');
+  const key = String(m['CallMeBot API key'] || '').trim();
+  if (!phone || !key) return 'skipped (WhatsApp number or CallMeBot key not set)';
+  const url = 'https://api.callmebot.com/whatsapp.php?phone=' + phone + '&text=' + encodeURIComponent(text) + '&apikey=' + encodeURIComponent(key);
+  const res = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+  const code = res.getResponseCode(), body = res.getContentText();
+  if (code !== 200 || /error|invalid|not.*(allowed|activated)/i.test(body)) return 'failed: ' + body.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160);
+  return 'sent to ' + phone;
+}
+
+function statementHtml_(hosp, total, asOf, od, m) {
+  const doc = esc_(String(m['Doctor name'] || '')), cred = esc_(String(m['Credentials'] || ''));
+  const fmtD = s => { const p = s.split('-'); return p[2] + ' ' + ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+p[1] - 1] + ' ' + p[0]; };
+  const th = 'style="background:#1f4e78;color:#fff;padding:6px 8px;text-align:left;font-size:11px"';
+  const thr = 'style="background:#1f4e78;color:#fff;padding:6px 8px;text-align:right;font-size:11px"';
+  const td = 'style="padding:5px 8px;border-bottom:1px solid #e3e5e9;font-size:11px"';
+  const tdr = 'style="padding:5px 8px;border-bottom:1px solid #e3e5e9;font-size:11px;text-align:right"';
+  const summary = hosp.map(h => `<tr><td ${td}>${esc_(h.name)}</td><td ${tdr}>${h.cases.length}</td><td ${tdr}><b>${inr_(h.due)}</b></td>
+    <td ${tdr}>${h.overdue ? inr_(h.overdue) : '—'}</td><td ${tdr}>${h.oldest}</td></tr>`).join('');
+  const sections = hosp.map(h => `
+    <h3 style="font-size:14px;margin:22px 0 6px;color:#0f2a47">${esc_(h.name)} <span style="font-weight:400;color:#6b7280">· ${inr_(h.due)} due · ${h.cases.length} case${h.cases.length === 1 ? '' : 's'}</span></h3>
+    <table style="border-collapse:collapse;width:100%"><tr><th ${th}>Date</th><th ${th}>Case ID</th><th ${th}>Patient</th><th ${th}>Case</th>
+      <th ${thr}>Fee</th><th ${thr}>Received</th><th ${thr}>Due</th><th ${thr}>Days</th></tr>
+    ${h.cases.map(r => `<tr${r.days > od ? ' style="background:#fdecea"' : ''}><td ${td}>${fmtD(r.date)}</td><td ${td}>${esc_(r.id)}</td>
+      <td ${td}>${esc_(r.patient)}${r.uhid ? ' <span style="color:#6b7280">(' + esc_(r.uhid) + ')</span>' : ''}</td>
+      <td ${td}>${esc_(r.caseType)}${r.caseDesc ? ' – ' + esc_(r.caseDesc) : ''}${r.shared ? ' <i>(shared)</i>' : ''}</td>
+      <td ${tdr}>${inr_(r.shared && r.collector === 'Separately' ? r.myShare : r.fee)}</td><td ${tdr}>${inr_(r.received)}</td>
+      <td ${tdr}><b>${inr_(r.due)}</b></td><td ${tdr}>${r.days}</td></tr>`).join('')}
+    </table>`).join('');
+  return `<html><body style="font-family:Arial,sans-serif;color:#1c1f24;margin:28px">
+    <div style="border-bottom:2px solid #c9a96e;padding-bottom:8px;margin-bottom:14px">
+      <div style="font-family:Georgia,serif;font-size:20px;font-weight:700;color:#0f2a47">${doc || 'Case Tracker'}</div>
+      ${cred ? `<div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#a07f45">${cred}</div>` : ''}
+    </div>
+    <div style="font-size:18px;font-weight:700">Hospital dues statement</div>
+    <div style="font-size:12px;color:#6b7280;margin-bottom:12px">As of ${asOf} · Total outstanding <b style="color:#1c1f24">${inr_(total)}</b>
+      · rows in red are over ${od} days</div>
+    ${hosp.length ? `<table style="border-collapse:collapse;width:100%"><tr><th ${th}>Hospital</th><th ${thr}>Cases</th><th ${thr}>Due</th>
+      <th ${thr}>Over ${od} days</th><th ${thr}>Oldest (days)</th></tr>${summary}
+      <tr><td ${td}><b>Total</b></td><td ${tdr}><b>${hosp.reduce((s, h) => s + h.cases.length, 0)}</b></td><td ${tdr}><b>${inr_(total)}</b></td><td ${td}></td><td ${td}></td></tr></table>
+      ${sections}` : '<p>Nothing is outstanding.</p>'}
+    <p style="font-size:10px;color:#9b9a95;margin-top:24px">Generated by Case Tracker. Cases where a colleague collected the fee are not included.</p>
+  </body></html>`;
+}
+
+// One hospital's statement — addressed to the hospital, ready to forward
+function hospitalHtml_(h, asOf, m) {
+  const doc = esc_(String(m['Doctor name'] || '')), cred = esc_(String(m['Credentials'] || ''));
+  const pay = esc_(String(m['Payment details (for hospital statements)'] || '')).replace(/\n/g, '<br>');
+  const fmtD = s => { const p = s.split('-'); return p[2] + ' ' + ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+p[1] - 1] + ' ' + p[0]; };
+  const th = 'style="background:#1f4e78;color:#fff;padding:6px 8px;text-align:left;font-size:11px"';
+  const thr = 'style="background:#1f4e78;color:#fff;padding:6px 8px;text-align:right;font-size:11px"';
+  const td = 'style="padding:6px 8px;border-bottom:1px solid #e3e5e9;font-size:11px"';
+  const tdr = 'style="padding:6px 8px;border-bottom:1px solid #e3e5e9;font-size:11px;text-align:right"';
+  const rows = h.cases.map((r, i) => `<tr><td ${tdr}>${i + 1}</td><td ${td}>${fmtD(r.date)}</td>
+    <td ${td}>${esc_(r.patient)}${r.uhid ? '<br><span style="color:#6b7280">' + esc_(r.uhid) + '</span>' : ''}</td>
+    <td ${td}>${esc_(r.caseType)}${r.caseDesc ? ' – ' + esc_(r.caseDesc) : ''}</td><td ${td}>${esc_(r.surgeon)}</td>
+    <td ${tdr}>${inr_(r.shared && r.collector === 'Separately' ? r.myShare : r.fee)}</td><td ${tdr}>${inr_(r.received)}</td>
+    <td ${tdr}><b>${inr_(r.due)}</b></td></tr>`).join('');
+  return `<html><body style="font-family:Arial,sans-serif;color:#1c1f24;margin:32px">
+    <div style="border-bottom:2px solid #c9a96e;padding-bottom:8px;margin-bottom:18px">
+      <div style="font-family:Georgia,serif;font-size:20px;font-weight:700;color:#0f2a47">${doc || 'Statement of dues'}</div>
+      ${cred ? `<div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#a07f45">${cred}</div>` : ''}
+    </div>
+    <table style="width:100%;font-size:12px;margin-bottom:14px"><tr>
+      <td><div style="color:#6b7280">To</div><div style="font-size:15px;font-weight:700">${esc_(h.name)}</div></td>
+      <td style="text-align:right"><div style="color:#6b7280">Statement date</div><div style="font-weight:700">${asOf}</div></td></tr></table>
+    <div style="font-size:17px;font-weight:700;margin-bottom:4px">Statement of outstanding anaesthesia fees</div>
+    <div style="font-size:12px;color:#6b7280;margin-bottom:12px">${h.cases.length} case${h.cases.length === 1 ? '' : 's'} with a balance due</div>
+    <table style="border-collapse:collapse;width:100%"><tr><th ${thr}>#</th><th ${th}>Date</th><th ${th}>Patient / IP no.</th><th ${th}>Procedure</th>
+      <th ${th}>Surgeon</th><th ${thr}>Fee</th><th ${thr}>Received</th><th ${thr}>Due</th></tr>${rows}
+      <tr><td ${td}></td><td ${td} colspan="6"><b>Total due</b></td><td ${tdr}><b style="font-size:13px">${inr_(h.due)}</b></td></tr></table>
+    ${pay ? `<div style="margin-top:18px;padding:10px 12px;background:#f5f6f8;border-radius:6px;font-size:12px"><b>Payment details</b><br>${pay}</div>` : ''}
+    <p style="font-size:12px;margin-top:22px">Kindly arrange payment of the outstanding amount at the earliest. For any query, please contact me.</p>
+    <p style="font-size:12px;margin-top:18px">Regards,<br><b>${doc}</b></p>
+  </body></html>`;
+}
+
+function inr_(n) {
+  n = Math.round(Number(n) || 0);
+  const neg = n < 0, s = String(Math.abs(n));
+  const last3 = s.slice(-3), rest = s.slice(0, -3);
+  return (neg ? '-' : '') + '₹' + (rest ? rest.replace(/\B(?=(\d{2})+(?!\d))/g, ',') + ',' : '') + last3;
+}
+function esc_(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
 /* ---------- Reads ---------- */

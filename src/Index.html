@@ -386,6 +386,7 @@
       <button onclick="openLists()">Manage lists <span>›</span></button>
       <button id="ledgerMenu" onclick="openLedger()">Colleague balances <span>›</span></button>
       <button onclick="openTrash()">Trash <span id="trashCount">›</span></button>
+      <button onclick="askStatement()">Send dues statement now <span>Email + WhatsApp ›</span></button>
       <button onclick="doBackup()">Back up now <span id="backupInfo">›</span></button>
       <button onclick="load()">Refresh data <span>↻</span></button>
     </div>
@@ -1596,7 +1597,7 @@ function removeListItem(i) {
 }
 
 function showFile(title, text, url) {
-  $('fileTitle').textContent = title; $('fileSum').textContent = text; $('fileLink').href = url;
+  $('fileTitle').textContent = title; $('fileSum').textContent = text; $('fileLink').href = url; $('fileLink').textContent = 'Open in Google Drive';
   $('fileModal').classList.add('on');
 }
 async function exportView() {
@@ -1607,6 +1608,20 @@ async function exportView() {
     showFile('Excel file ready', `${f.count} cases saved as "${f.name}.xlsx" in your Drive folder "Case Tracker Exports".`, f.url);
   } catch (e) { toast(e.message || String(e), true); }
   finally { busy(false); }
+}
+function askStatement() {
+  askCf('Send dues statement?', 'The dues statement PDF is emailed and saved to Drive, using the Statement email on the Settings tab.', 'Send now', async () => {
+    busy(true, 'Preparing statement…');
+    try {
+      const r = await call('sendStatementNow');
+      const parts = [`${inr(r.total)} due across ${r.cases} case${r.cases === 1 ? '' : 's'} at ${r.hospitals} hospital${r.hospitals === 1 ? '' : 's'}. ${r.files > 1 ? r.files + ' PDFs saved (1 consolidated + 1 per hospital).' : 'Consolidated PDF saved to Drive.'}`,
+        r.email ? `Emailed to ${r.email}.` : 'Email skipped: add "Statement email" on the Settings tab.',
+        'WhatsApp: ' + r.whatsapp + '.'];
+      showFile('Statement sent', parts.join(' '), r.folder || r.pdf);
+      $('fileLink').textContent = r.folder ? 'Open the statements folder' : 'Open the PDF';
+    } catch (e) { toast(e.message || String(e), true); }
+    finally { busy(false); }
+  });
 }
 async function doBackup() {
   busy(true, 'Backing up…');
