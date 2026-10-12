@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="referrer" content="no-referrer">
+<meta name="apple-mobile-web-app-title" content="Sui">
+<meta name="theme-color" content="#FAF8F3">
+<title>Sui</title>
+<link rel="apple-touch-icon" href="icon/sui-icon-512.png">
+<link rel="icon" type="image/png" href="icon/sui-icon-512.png">
+<!--
+  Home Screen launcher for the Case Tracker web app.
+  The app link lives only after the # in the saved bookmark, so it is never part of this public file
+  and is never sent to GitHub. Only script.google.com links are accepted.
+-->
+<style>
+  :root { --bg:#FAF8F3; --card:#FFFFFF; --ink:#1E2422; --strong:#1F3D39; --muted:#5E6B65; --line:#E4E0D6; --accent:#234B46; --accent-ink:#FAF8F3; --soft:#E3ECE6; --err:#A3392B; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#111715; --card:#18221F; --ink:#E8EEEA; --strong:#F1F4F2; --muted:#9DB0A7; --line:#263833; --accent:#A9D3C0; --accent-ink:#10201C; --soft:#22332E; --err:#E59A8C; } }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--ink); font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  main { max-width: 440px; margin: 0 auto; padding: max(48px, env(safe-area-inset-top)) 20px 40px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 14px; }
+  h1 { font: 700 26px/1.2 Georgia, "Times New Roman", serif; color: var(--strong); margin: 4px 0 0; }
+  p { margin: 0; color: var(--muted); }
+  .card { width: 100%; background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 18px; text-align: left; display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+  label { font-size: 13px; font-weight: 600; color: var(--muted); }
+  input { width: 100%; height: 48px; border: 1px solid var(--line); border-radius: 14px; padding: 0 14px; font: 15px -apple-system, sans-serif; color: var(--ink); background: var(--bg); }
+  button, .btn { display: flex; align-items: center; justify-content: center; width: 100%; height: 52px; border: 0; border-radius: 26px; background: var(--accent); color: var(--accent-ink); font: 700 16px -apple-system, sans-serif; text-decoration: none; cursor: pointer; }
+  .err { color: var(--err); font-size: 14px; min-height: 1em; }
+  ol { margin: 0; padding-left: 20px; color: var(--ink); } ol li { margin: 6px 0; }
+  .hide { display: none !important; }
+  .sui { width: 120px; height: 120px; }
+  .pulse { animation: p 1.2s ease-in-out infinite; } @keyframes p { 50% { transform: translateY(-4px); } }
+  @media (prefers-reduced-motion: reduce) { .pulse { animation: none; } }
+</style>
+</head>
+<body>
+<main>
+  <svg class="sui pulse" id="sui" viewBox="0 0 160 160" aria-hidden="true">
+    <circle cx="80" cy="84" r="54" fill="var(--soft)"/>
+    <g transform="translate(6 10) scale(.92)"><g transform="rotate(-28 80 80)">
+      <rect x="14" y="68" width="10" height="24" rx="3" fill="#C9A96E"/><rect x="24" y="76" width="22" height="8" rx="2" fill="#234B46"/><rect x="44" y="60" width="6" height="40" rx="3" fill="#234B46"/>
+      <rect x="50" y="62" width="66" height="36" rx="12" fill="#FFFFFF" stroke="#234B46" stroke-width="3"/><rect x="84" y="67" width="27" height="26" rx="8" fill="#B9D3C6"/>
+      <path d="M116 72L128 78L128 82L116 88Z" fill="#234B46"/><path d="M128 80H150" stroke="#234B46" stroke-width="2.5" stroke-linecap="round"/>
+      <circle cx="72" cy="79" r="3" fill="#234B46"/><circle cx="88" cy="79" r="3" fill="#234B46"/><path d="M74 86 Q80 91 86 86" fill="none" stroke="#234B46" stroke-width="2.5" stroke-linecap="round"/>
+      <circle cx="65" cy="86" r="3" fill="#E9B7A6" opacity=".7"/><circle cx="95" cy="86" r="3" fill="#E9B7A6" opacity=".7"/>
+    </g></g>
+  </svg>
+
+  <!-- Opening (normal use) -->
+  <section id="opening" class="hide">
+    <h1>Opening…</h1>
+    <p style="margin-top:8px"><a id="manual" href="#" style="color:var(--strong);font-weight:600">Tap here if it doesn’t open</a></p>
+  </section>
+
+  <!-- One-time setup -->
+  <section id="setup" class="hide" style="width:100%">
+    <h1>Set up Sui</h1>
+    <p>One time, on this phone.</p>
+    <div class="card">
+      <label for="link">Paste the app link (ends in /exec)</label>
+      <input id="link" type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://script.google.com/macros/s/…/exec">
+      <div class="err" id="err"></div>
+      <button type="button" id="save">Continue</button>
+    </div>
+  </section>
+
+  <!-- Ready to add -->
+  <section id="ready" class="hide" style="width:100%">
+    <h1>Now add it to your Home Screen</h1>
+    <div class="card">
+      <ol>
+        <li>Tap <b>Share</b> (the square with an arrow).</li>
+        <li>Tap <b>Add to Home Screen</b>.</li>
+        <li>Check the name says <b>Sui</b>, then tap <b>Add</b>.</li>
+      </ol>
+      <a class="btn" id="tryit" href="#">Or open the app now</a>
+    </div>
+  </section>
+</main>
+<script>
+(function () {
+  var OK = /^(macros|a\/macros\/[A-Za-z0-9.-]+)\/s\/[A-Za-z0-9_-]{20,}\/exec$/;
+  function show(id) { ['opening', 'setup', 'ready'].forEach(function (s) { document.getElementById(s).classList.toggle('hide', s !== id); }); }
+  function toPath(v) {
+    v = String(v || '').trim();
+    var m = v.match(/^https:\/\/script\.google\.com\/(.+?\/exec)(?:[?#].*)?$/);
+    var p = m ? m[1] : v.replace(/^#/, '');
+    return OK.test(p) ? p : '';
+  }
+  function target(p) { return 'https://script.google.com/' + p; }
+
+  var path = toPath(decodeURIComponent(location.hash.slice(1)));
+  var fresh = sessionStorage && (function () { try { return sessionStorage.getItem('sui-just-set') === '1'; } catch (e) { return false; } })();
+
+  if (path && !fresh) {
+    // Normal launch from the Home Screen: go straight to the app.
+    document.getElementById('manual').href = target(path);
+    show('opening');
+    location.replace(target(path));
+    return;
+  }
+  if (path && fresh) { document.getElementById('tryit').href = target(path); show('ready'); document.getElementById('sui').classList.remove('pulse'); return; }
+
+  document.getElementById('sui').classList.remove('pulse');
+  show('setup');
+  document.getElementById('save').addEventListener('click', function () {
+    var p = toPath(document.getElementById('link').value);
+    if (!p) { document.getElementById('err').textContent = 'That doesn’t look like the app link. It should start with https://script.google.com/ and end in /exec.'; return; }
+    try { sessionStorage.setItem('sui-just-set', '1'); } catch (e) {}
+    // Put the link after the # without reloading, so "Add to Home Screen" saves it.
+    history.replaceState(null, '', location.pathname + '#' + p);
+    document.getElementById('tryit').href = target(p);
+    show('ready');
+  });
+})();
+</script>
+</body>
+</html>
