@@ -2,204 +2,332 @@
 <html>
 <head>
 <base target="_top">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap">
+<script>
+  // Apply the saved theme before first paint (per device): auto | light | dark
+  (function () { try { var t = localStorage.getItem('ct-theme'); if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+    if (localStorage.getItem('ct-sui') === 'off') document.documentElement.classList.add('sui-hide'); } catch (e) {} })();
+</script>
 <meta charset="utf-8">
 <style>
+  /* ===== Theme tokens: Ivory & Sage (light) ===== */
   :root {
-    --bg: #f5f6f8; --card: #fff; --ink: #1c1f24; --muted: #6b7280; --line: #e3e5e9;
-    --accent: #1f4e78; --accent-soft: #e6eef6; --good: #1d7a46; --warn: #b45309; --bad: #b42318;
-    --r: 12px;
-    /* chart colours: categorical slots 1-2, status, ordinal blue ramp */
-    --s1: #2a78d6; --s2: #eb6834;
-    --st-good: #0ca30c; --st-warn: #fab219; --st-crit: #d03b3b; --st-off: #9b9a95;
-    --o1: #86b6ef; --o2: #5598e7; --o3: #256abf; --o4: #184f95;
+    color-scheme: light;
+    --bg: #FAF8F3; --card: #FFFFFF; --surface-2: #EFECE4; --field: #FFFFFF;
+    --ink: #1E2422; --ink-strong: #1F3D39; --muted: #56645E; --line: #E4E0D6; --line-2: #D7D2C6;
+    --accent: #234B46; --accent-ink: #FAF8F3; --accent-soft: #E3ECE6; --accent-text: #234B46;
+    --gold: #8A6D3B; --gold-mark: #C9A96E;
+    --good: #2F7A4F; --warn: #9A5A06; --bad: #B42318; --bad-soft: #FBEAE7; --good-soft: #E3F1E8; --warn-soft: #FBF0DD;
+    --shadow: 0 1px 2px rgba(31, 61, 57, .06), 0 6px 18px rgba(31, 61, 57, .05);
+    --overlay: rgba(20, 30, 27, .45); --toast: #1F3D39; --toast-ink: #FAF8F3;
+    --r: 18px;
+    /* charts */
+    --s1: #0F8B6F; --s2: #C06A1B;
+    --st-good: #2F8F5B; --st-warn: #D9A13B; --st-crit: #C2453D; --st-off: #A3ABA7;
+    --o1: #B9D3C6; --o2: #7FAE9B; --o3: #3F7F6E; --o4: #1F3D39;
+    /* Sui */
+    --sui-body: #FFFFFF; --sui-line: #234B46; --sui-liquid: #B9D3C6; --sui-cheek: #E9B7A6;
+    --serif: "Fraunces", "Iowan Old Style", Georgia, serif;
+    --sans: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   }
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { margin: 0; background: var(--bg); color: var(--ink);
-    font: 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
-  header { position: sticky; top: 0; z-index: 5; color: #fff;
-    background: linear-gradient(135deg, #0f2a47 0%, #1b3f66 100%);
-    padding: 14px 16px 0; padding-top: max(14px, env(safe-area-inset-top));
-    box-shadow: 0 2px 10px rgba(10, 25, 45, .18); }
-  header .brand { display: flex; align-items: center; gap: 12px; }
-  header .mono { width: 42px; height: 42px; border-radius: 50%; flex: none; display: grid; place-items: center;
-    border: 1.5px solid #c9a96e; color: #e6cf9f; font: 600 15px/1 "Iowan Old Style", "Baskerville", Georgia, serif;
-    letter-spacing: .06em; background: rgba(255,255,255,.04); }
-  header .doc { font: 700 19px/1.2 "Iowan Old Style", "Baskerville", Georgia, "Times New Roman", serif; letter-spacing: .01em; }
-  header .cred { font-size: 11.5px; letter-spacing: .14em; text-transform: uppercase; color: #d9c08a; margin-top: 3px; }
-  header .cred i { font-style: normal; opacity: .6; margin: 0 4px; }
-  header .screen-name { margin-top: 12px; padding: 9px 0 10px; border-top: 1px solid rgba(201, 169, 110, .45); }
-  header #title { font-size: 13px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: rgba(255,255,255,.88); }
-  main { padding: 12px 16px 170px; max-width: 640px; margin: 0 auto; }
-  .screen { display: none; } .screen.on { display: block; }
+  /* ===== Dark ===== */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #111715; --card: #18221F; --surface-2: #1E2B27; --field: #18221F;
+      --ink: #E8EEEA; --ink-strong: #F1F4F2; --muted: #9DB0A7; --line: #263833; --line-2: #33473F;
+      --accent: #A9D3C0; --accent-ink: #10201C; --accent-soft: #22332E; --accent-text: #A9D3C0;
+      --gold: #D9B97A; --gold-mark: #D9B97A;
+      --good: #6FCB97; --warn: #E7B866; --bad: #F08A7E; --bad-soft: #3A2221; --good-soft: #1D3328; --warn-soft: #3A3020;
+      --shadow: none; --overlay: rgba(0, 0, 0, .6); --toast: #2A3D37; --toast-ink: #F1F4F2;
+      --s1: #2BA383; --s2: #C97A28;
+      --st-good: #5DBB86; --st-warn: #E0B15A; --st-crit: #E46B60; --st-off: #6E7C76;
+      --o1: #2E4A42; --o2: #4F7F70; --o3: #7FB09E; --o4: #C4E3D5;
+      --sui-body: #14201D; --sui-line: #D6E3DC; --sui-liquid: #5F9A86; --sui-cheek: #B57F70;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #111715; --card: #18221F; --surface-2: #1E2B27; --field: #18221F;
+    --ink: #E8EEEA; --ink-strong: #F1F4F2; --muted: #9DB0A7; --line: #263833; --line-2: #33473F;
+    --accent: #A9D3C0; --accent-ink: #10201C; --accent-soft: #22332E; --accent-text: #A9D3C0;
+    --gold: #D9B97A; --gold-mark: #D9B97A;
+    --good: #6FCB97; --warn: #E7B866; --bad: #F08A7E; --bad-soft: #3A2221; --good-soft: #1D3328; --warn-soft: #3A3020;
+    --shadow: none; --overlay: rgba(0, 0, 0, .6); --toast: #2A3D37; --toast-ink: #F1F4F2;
+    --s1: #2BA383; --s2: #C97A28;
+    --st-good: #5DBB86; --st-warn: #E0B15A; --st-crit: #E46B60; --st-off: #6E7C76;
+    --o1: #2E4A42; --o2: #4F7F70; --o3: #7FB09E; --o4: #C4E3D5;
+    --sui-body: #14201D; --sui-line: #D6E3DC; --sui-liquid: #5F9A86; --sui-cheek: #B57F70;
+  }
 
-  /* form */
-  .card { background: var(--card); border-radius: var(--r); padding: 14px; margin-bottom: 12px; border: 1px solid var(--line); }
-  .card h3 { margin: 0 0 10px; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
-  label { display: block; font-size: 13px; color: var(--muted); margin: 10px 0 4px; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.45 var(--sans); }
+  button, input, select, textarea { font-family: var(--sans); }
+
+  /* ===== Header ===== */
+  header { position: sticky; top: 0; z-index: 5; background: var(--bg);
+    padding: 14px 20px 10px; padding-top: max(14px, env(safe-area-inset-top)); border-bottom: 1px solid transparent; }
+  header.scrolled { border-bottom-color: var(--line); }
+  header .brand { display: flex; align-items: center; gap: 12px; max-width: 640px; margin: 0 auto; }
+  header .mono { width: 40px; height: 40px; border-radius: 50%; flex: none; display: grid; place-items: center;
+    background: var(--accent); color: var(--accent-ink); font: 600 14px/1 var(--serif); letter-spacing: .06em; }
+  header .doc { font: 700 17px/1.2 var(--serif); color: var(--ink-strong); }
+  header .cred { font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); margin-top: 3px; }
+  header .cred i { font-style: normal; opacity: .6; margin: 0 4px; }
+  header .screen-name { max-width: 640px; margin: 12px auto 0; }
+  header #title { font: 700 26px/1.15 var(--serif); color: var(--ink-strong); }
+  header.home .screen-name { display: none; }
+  main { padding: 6px 20px 190px; max-width: 640px; margin: 0 auto; }
+  .screen { display: none; } .screen.on { display: block; animation: fadeIn .18s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .screen.on { animation: none; } }
+
+  /* ===== Cards & form ===== */
+  .card { background: var(--card); border-radius: var(--r); padding: 16px; margin-bottom: 14px; border: 1px solid var(--line); box-shadow: var(--shadow); }
+  .card h3 { margin: 0 0 6px; font: 700 17px/1.3 var(--serif); color: var(--ink-strong); }
+  label { display: block; font-size: 12.5px; font-weight: 600; color: var(--muted); margin: 12px 0 6px; }
   label .req { color: var(--bad); }
-  input, select, textarea { width: 100%; font-size: 16px; padding: 11px 12px; border: 1px solid var(--line);
-    border-radius: 10px; background: #fff; color: var(--ink); -webkit-appearance: none; appearance: none; }
+  input, select, textarea { width: 100%; font-size: 16px; padding: 12px 14px; border: 1px solid var(--line);
+    border-radius: 14px; background: var(--field); color: var(--ink); -webkit-appearance: none; appearance: none; min-height: 48px; }
+  input::placeholder, textarea::placeholder { color: var(--muted); opacity: .8; }
   select { background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
-    background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%; background-size: 5px 5px; background-repeat: no-repeat; padding-right: 32px; }
-  textarea { min-height: 70px; resize: vertical; }
-  input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); border-color: transparent; }
+    background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%; background-size: 5px 5px; background-repeat: no-repeat; padding-right: 34px; }
+  textarea { min-height: 80px; resize: vertical; }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: transparent; }
   .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 6px; }
-  .seg button, .chips button { padding: 10px 6px; border: 1px solid var(--line); border-radius: 10px; background: #fff;
-    font-size: 15px; color: var(--ink); }
-  .seg button.on, .chips button.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .row2 > div > label:first-child { margin-top: 12px; }
+  #fee { font: 700 24px/1 var(--serif); color: var(--ink-strong); min-height: 56px; }
+
+  /* segmented controls */
+  .seg, .segc { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; background: var(--surface-2);
+    border-radius: 14px; padding: 4px; min-height: 48px; }
+  .seg button, .segc button { border: 0; border-radius: 10px; background: transparent; font-size: 14.5px; color: var(--muted); padding: 8px 6px; }
+  .seg button.on, .segc button.on { background: var(--card); color: var(--ink-strong); font-weight: 700; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+  :root[data-theme="dark"] .seg button.on, :root[data-theme="dark"] .segc button.on { background: #33514A; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .seg button.on, :root:not([data-theme="light"]) .segc button.on { background: #33514A; } }
+  .is-seg { display: none !important; }
+
+  /* hospital chips */
+  .hchips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .hchips button { min-height: 40px; padding: 0 14px; border: 1px solid var(--line); border-radius: 20px; background: var(--card);
+    color: var(--ink); font-size: 14.5px; }
+  .hchips button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+  .hchips button.more { border-style: dashed; border-color: var(--line-2); background: transparent; color: var(--accent-text); }
+  #hospital.hidden-sel { display: none; }
+
   .chips { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-  .hint { margin-top: 6px; font-size: 13px; color: var(--accent); background: var(--accent-soft);
-    border: 0; border-radius: 8px; padding: 6px 10px; display: none; }
+  .hint { margin-top: 8px; font-size: 13px; color: var(--accent-text); background: var(--accent-soft);
+    border: 0; border-radius: 10px; padding: 8px 12px; display: none; text-align: left; }
   .warn { font-size: 13px; color: var(--warn); margin-top: 6px; display: none; }
-  .tgl { display: flex; justify-content: space-between; align-items: center; margin: 14px 0 0; font-size: 15px; color: var(--ink); cursor: pointer; }
-  .tgl input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-  .tgl .knob { position: relative; width: 50px; height: 30px; border-radius: 15px; background: #cfd3da; transition: background .15s; flex: none; }
+  .tgl { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 16px 0 0; font-size: 15px; font-weight: 500; color: var(--ink); cursor: pointer; }
+  .tgl input { position: absolute; opacity: 0; width: 1px; height: 1px; min-height: 0; }
+  .tgl .knob { position: relative; width: 50px; height: 30px; border-radius: 15px; background: var(--line-2); transition: background .15s; flex: none; }
   .tgl .knob::after { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff;
     box-shadow: 0 1px 2px rgba(0,0,0,.25); transition: left .15s; }
-  .tgl input:checked + .knob { background: var(--good); } .tgl input:checked + .knob::after { left: 23px; }
-  details summary { color: var(--accent); font-size: 15px; padding: 4px 0; cursor: pointer; }
-  .actions { display: grid; gap: 8px; }
-  .btn { width: 100%; padding: 14px; font-size: 16px; font-weight: 600; border-radius: 12px; border: 0; }
-  .btn.primary { background: var(--accent); color: #fff; }
-  .btn.ghost { background: #fff; color: var(--accent); border: 1px solid var(--accent); }
+  .tgl input:checked + .knob { background: var(--accent); } .tgl input:checked + .knob::after { left: 23px; }
+  .tgl input:focus-visible + .knob { outline: 2px solid var(--accent); outline-offset: 2px; }
+  details summary { color: var(--accent-text); font-size: 15px; font-weight: 600; padding: 4px 0; cursor: pointer; }
+  .actions { display: grid; gap: 10px; }
+  .btn { width: 100%; min-height: 52px; padding: 14px; font-size: 16px; font-weight: 700; border-radius: 26px; border: 0; }
+  .btn.primary { background: var(--accent); color: var(--accent-ink); }
+  .btn.ghost { background: transparent; color: var(--accent-text); border: 1.5px solid var(--accent); }
   .btn.plain { background: transparent; color: var(--muted); }
   .btn:disabled { opacity: .5; }
 
-  /* records */
-  .filters { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin: 8px 0; }
-  .filters select { font-size: 14px; padding: 9px 26px 9px 10px; }
-  .summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 10px; }
-  .kpi { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
-  .kpi b { display: block; font-size: 16px; } .kpi span { font-size: 12px; color: var(--muted); }
-  .rec { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 12px; margin-bottom: 8px;
-    display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; }
-  .rec .name { font-weight: 600; } .rec .meta { font-size: 13px; color: var(--muted); }
-  .rec .amt { text-align: right; font-weight: 600; } .badge { font-size: 12px; padding: 2px 8px; border-radius: 10px; justify-self: end; }
-  .b-Paid { background: #e3f4ea; color: var(--good); } .b-Pending { background: #fdecea; color: var(--bad); }
-  .b-Partially { background: #fff4e0; color: var(--warn); } .b-Written { background: #eee; color: var(--muted); }
-  .b-Split { background: #e6eef9; color: #256abf; }
-  .empty { text-align: center; color: var(--muted); padding: 40px 0; }
+  /* ===== Home ===== */
+  .greet { background: var(--accent-soft); border-radius: 26px; padding: 18px 16px 18px 20px; display: flex; align-items: center;
+    justify-content: space-between; gap: 8px; margin-bottom: 18px; }
+  .greet .d { font-size: 13px; color: var(--muted); }
+  .greet .g { font: 500 22px/1.2 var(--serif); color: var(--ink-strong); margin-top: 4px; }
+  .greet .g .s { display: block; font: 500 14px/1.4 var(--sans); color: var(--muted); margin-top: 6px; }
+  .hero { display: block; width: 100%; text-align: left; background: none; border: 0; padding: 2px 2px 16px; color: inherit; cursor: pointer; }
+  .hero span { display: block; }
+  .hero .k { font-size: 13px; color: var(--muted); }
+  .hero .v { font: 700 42px/1.05 var(--serif); color: var(--ink-strong); margin: 4px 0; font-variant-numeric: tabular-nums; }
+  .hero .s { font-size: 13px; color: var(--muted); }
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; }
+  .duo > div { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 14px 16px; }
+  .duo span { font-size: 12px; color: var(--muted); display: block; }
+  .duo b { font: 700 21px/1.3 var(--serif); color: var(--ink-strong); font-variant-numeric: tabular-nums; }
+  .sect { font: 700 18px/1.3 var(--serif); color: var(--ink-strong); margin: 4px 0 10px; }
+  .remind { display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; padding: 14px 16px; margin-bottom: 10px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 16px; color: var(--ink); font-size: 15px; text-align: left; min-height: 52px; }
+  .remind b { color: var(--ink-strong); white-space: nowrap; } .remind b.gold { color: var(--gold); }
+  .bigadd { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 6px 0 22px; }
+  .calm { display: flex; align-items: center; gap: 14px; padding: 14px 16px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; margin-bottom: 10px; }
+  .calm div { font-size: 14px; color: var(--muted); } .calm b { display: block; color: var(--ink-strong); font: 700 16px/1.3 var(--serif); }
+
+  /* ===== Records ===== */
+  .filters { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0; }
+  #fHospital { grid-column: 1 / -1; order: 3; }
+  .filters select { font-size: 14px; padding: 10px 28px 10px 12px; min-height: 44px; }
+  .custom-dates { display: none; margin: -2px 0 10px; }
+  .custom-dates.on { display: grid; }
+  .summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+  .kpi { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 10px 12px; }
+  .kpi b { display: block; font: 700 17px/1.3 var(--serif); color: var(--ink-strong); font-variant-numeric: tabular-nums; }
+  .kpi span { font-size: 12px; color: var(--muted); }
+  .rec { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 16px; margin-bottom: 10px;
+    display: grid; grid-template-columns: 1fr auto; gap: 3px 10px; cursor: pointer; }
+  .rec .name { font-weight: 700; color: var(--ink-strong); } .rec .meta { font-size: 13px; color: var(--muted); }
+  .rec .amt { text-align: right; font: 700 16px/1.3 var(--serif); color: var(--ink-strong); }
+  .badge { font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 10px; justify-self: end; }
+  .b-Paid { background: var(--good-soft); color: var(--good); } .b-Pending { background: var(--bad-soft); color: var(--bad); }
+  .b-Partially { background: var(--warn-soft); color: var(--warn); } .b-Written { background: var(--surface-2); color: var(--muted); }
+  .b-Split { background: var(--accent-soft); color: var(--accent-text); }
+  .empty { text-align: center; color: var(--muted); padding: 28px 12px; }
+  .empty b { display: block; font: 700 18px/1.3 var(--serif); color: var(--ink-strong); margin: 6px 0 2px; }
   .placeholder { text-align: center; color: var(--muted); padding: 60px 20px; }
 
-  /* dashboard */
-  .dfilters { display: flex; gap: 8px; margin-bottom: 8px; }
-  .dfilters select { flex: 1; font-size: 14px; padding: 9px 26px 9px 10px; }
-  .dfilters button { flex: none; padding: 9px 14px; border: 1px solid var(--line); border-radius: 10px; background: #fff;
-    font-size: 14px; color: var(--accent); font-weight: 600; }
+  /* ===== Insights ===== */
+  .pchips { display: flex; gap: 6px; overflow-x: auto; padding: 2px 0 10px; scrollbar-width: none; }
+  .pchips::-webkit-scrollbar { display: none; }
+  .pchips button { flex: none; min-height: 38px; padding: 0 14px; border-radius: 19px; border: 1px solid var(--line); background: var(--card);
+    color: var(--ink); font-size: 14px; }
+  .pchips button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+  .dfilters { display: flex; gap: 8px; margin-bottom: 10px; }
+  .dfilters button { flex: 1; min-height: 44px; padding: 0 14px; border: 1px solid var(--line); border-radius: 22px; background: var(--card);
+    font-size: 14px; color: var(--accent-text); font-weight: 700; }
+  #dPeriod { display: none; }
   #dPanel { display: none; } #dPanel.open { display: block; }
   #dPanel .tip { font-size: 12px; color: var(--muted); margin: 0 0 4px; }
+  #dPanel select[multiple] { min-height: 96px; background-image: none; padding-right: 14px; }
   .chiprow { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
   .chiprow:empty { display: none; }
-  .chip { font-size: 13px; background: var(--accent-soft); color: var(--accent); border-radius: 14px; padding: 5px 10px; border: 0; }
-  .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
-  .tile { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 10px 12px; }
-  .tile b { display: block; font-size: 20px; font-variant-numeric: tabular-nums; }
+  .chip { font-size: 13px; background: var(--accent-soft); color: var(--accent-text); border-radius: 14px; padding: 6px 11px; border: 0; }
+  .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .tile { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 12px 14px; }
+  .tile b { display: block; font: 700 21px/1.25 var(--serif); color: var(--ink-strong); font-variant-numeric: tabular-nums; }
   .tile span { font-size: 12px; color: var(--muted); }
+  .tile .delta { display: block; font-size: 12px; margin-top: 2px; color: var(--muted); }
+  .tile .delta.up { color: var(--good); } .tile .delta.down { color: var(--bad); }
   .tile.tap { cursor: pointer; }
   .tile.alert span::before { content: "\25CF"; color: var(--st-crit); margin-right: 4px; }
-  .chart h4 { margin: 0 0 2px; font-size: 15px; }
-  .chart .sub { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
-  .hrow { display: grid; grid-template-columns: 34% 1fr auto; align-items: center; gap: 8px; padding: 6px 0; }
+  .chart h4 { margin: 0 0 2px; font: 700 17px/1.3 var(--serif); color: var(--ink-strong); }
+  .chart .sub { font-size: 12.5px; color: var(--muted); margin-bottom: 12px; }
+  .chart .minih { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 16px 0 8px; }
+  .hrow { display: grid; grid-template-columns: 34% 1fr auto; align-items: center; gap: 8px; padding: 7px 0; }
   .hrow.tap { cursor: pointer; }
-  .hrow .lb { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hrow .lb { font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .hrow .bar { height: 14px; border-radius: 0 4px 4px 0; min-width: 2px; }
-  .hrow .v { font-size: 13px; font-variant-numeric: tabular-nums; text-align: right; }
-  .hrow .v small { display: block; font-size: 11px; color: var(--muted); }
-  .vchart { display: flex; align-items: flex-end; gap: 4px; height: 150px; border-bottom: 1px solid #c9ccd1; }
+  .hrow .stack { display: flex; gap: 2px; height: 14px; }
+  .hrow .stack div { height: 100%; min-width: 2px; } .hrow .stack div:last-child { border-radius: 0 4px 4px 0; }
+  .hrow .v { font-size: 13.5px; font-variant-numeric: tabular-nums; text-align: right; color: var(--ink-strong); font-weight: 600; }
+  .hrow .v small { display: block; font-size: 11px; color: var(--muted); font-weight: 400; }
+  .vchart { display: flex; align-items: flex-end; gap: 4px; height: 150px; border-bottom: 1px solid var(--line-2); }
   .vgrp { flex: 1; display: flex; align-items: flex-end; justify-content: center; gap: 2px; height: 100%; cursor: pointer; }
   .vgrp .bar { width: 42%; max-width: 14px; border-radius: 4px 4px 0 0; min-height: 2px; }
   .vgrp.sel { background: var(--accent-soft); border-radius: 6px 6px 0 0; }
   .vlabels { display: flex; gap: 4px; margin-top: 4px; } .vlabels span { flex: 1; text-align: center; font-size: 11px; color: var(--muted); }
   .ymax { font-size: 11px; color: var(--muted); margin-bottom: 2px; }
   .readout { font-size: 13px; margin-top: 8px; min-height: 18px; }
-  .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; margin-top: 8px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; margin-top: 8px; color: var(--ink); }
   .legend span { cursor: pointer; } .legend em { font-style: normal; color: var(--muted); }
   .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
-  .share { display: flex; gap: 2px; height: 18px; border-radius: 4px; overflow: hidden; }
-  .share div { height: 100%; min-width: 3px; }
-  .seglite { display: flex; gap: 4px; margin-bottom: 8px; }
-  .seglite button { flex: 1; padding: 7px 4px; font-size: 13px; border: 1px solid var(--line); background: #fff; border-radius: 8px; color: var(--ink); }
-  .seglite button.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .share { display: flex; gap: 2px; height: 16px; border-radius: 4px; overflow: hidden; }
+  .share div { height: 100%; min-width: 3px; cursor: pointer; }
+  .seglite { display: flex; gap: 4px; margin-bottom: 10px; background: var(--surface-2); border-radius: 14px; padding: 4px; flex-wrap: wrap; }
+  .seglite button { flex: 1; min-height: 38px; padding: 6px 8px; font-size: 13.5px; border: 0; background: transparent; border-radius: 10px; color: var(--muted); }
+  .seglite button.on { background: var(--card); color: var(--ink-strong); font-weight: 700; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
   .drill { display: flex; align-items: center; justify-content: space-between; gap: 8px; background: var(--accent-soft);
-    color: var(--accent); border-radius: 10px; padding: 8px 12px; margin: 8px 0; font-size: 14px; }
-  .drill button { border: 0; background: none; color: var(--accent); font-weight: 600; font-size: 14px; }
+    color: var(--accent-text); border-radius: 14px; padding: 10px 14px; margin: 8px 0; font-size: 14px; }
+  .drill button { border: 0; background: none; color: var(--accent-text); font-weight: 700; font-size: 14px; min-height: 36px; }
 
-  /* records: select + pay */
-  .rtools { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 8px 0 0; min-height: 34px; }
+  /* ===== Records: select + pay ===== */
+  .rtools { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 8px 0 0; min-height: 40px; }
   .rtools span { font-size: 13px; color: var(--muted); }
-  .rtools .lnk { border: 0; background: none; color: var(--accent); font-weight: 600; font-size: 14px; padding: 6px 0; }
+  .rtools .lnk { border: 0; background: none; color: var(--accent-text); font-weight: 700; font-size: 14px; padding: 8px 0; min-height: 40px; }
   .rec.selmode { grid-template-columns: 26px 1fr auto; }
   .rec.selmode .name, .rec.selmode .meta:not(.r) { grid-column: 2; }
-  .rec .tick { grid-row: 1 / span 3; align-self: center; width: 22px; height: 22px; border-radius: 50%; border: 2px solid #b9bdc4; }
-  .rec.picked { border-color: var(--accent); background: #f3f7fb; }
-  .rec.picked .tick { background: var(--accent); border-color: var(--accent);
-    box-shadow: inset 0 0 0 3px #fff; }
-  .rec .payrow { grid-column: 1 / -1; display: flex; justify-content: flex-end; margin-top: 6px; }
-  .paybtn { border: 1px solid var(--accent); background: #fff; color: var(--accent); border-radius: 8px; padding: 6px 12px;
-    font-size: 14px; font-weight: 600; }
-  #actionBar { position: fixed; left: 0; right: 0; bottom: calc(58px + env(safe-area-inset-bottom)); z-index: 7; background: #fff;
-    border-top: 1px solid var(--line); padding: 10px 16px; display: none; align-items: center; justify-content: space-between; gap: 12px;
-    box-shadow: 0 -4px 12px rgba(0,0,0,.06); }
+  .rec .tick { grid-row: 1 / span 3; align-self: center; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--line-2); }
+  .rec.picked { border-color: var(--accent); background: var(--accent-soft); }
+  .rec.picked .tick { background: var(--accent); border-color: var(--accent); box-shadow: inset 0 0 0 3px var(--card); }
+  .rec .payrow { grid-column: 1 / -1; display: flex; justify-content: flex-end; margin-top: 8px; }
+  .paybtn { border: 1.5px solid var(--accent); background: transparent; color: var(--accent-text); border-radius: 18px; padding: 7px 14px;
+    font-size: 14px; font-weight: 700; min-height: 36px; }
+  #actionBar { position: fixed; left: 12px; right: 12px; bottom: calc(92px + env(safe-area-inset-bottom)); z-index: 7; background: var(--card);
+    border: 1px solid var(--line); border-radius: 20px; padding: 10px 12px 10px 16px; display: none; align-items: center; justify-content: space-between; gap: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.12); max-width: 616px; margin: 0 auto; }
   #actionBar.on { display: flex; }
-  #actionBar b { display: block; font-size: 15px; } #actionBar span { font-size: 13px; color: var(--muted); }
-  #actionBar .btn { width: auto; padding: 12px 18px; }
-  .modal { position: fixed; inset: 0; background: rgba(20,24,30,.45); z-index: 15; display: none; align-items: flex-end; }
+  #actionBar b { display: block; font-size: 15px; color: var(--ink-strong); } #actionBar span { font-size: 13px; color: var(--muted); }
+  #actionBar .btn { width: auto; min-height: 44px; padding: 10px 16px; }
+  .modal { position: fixed; inset: 0; background: var(--overlay); z-index: 15; display: none; align-items: flex-end; }
   .modal.on { display: flex; }
-  .sheet { background: #fff; width: 100%; border-radius: 16px 16px 0 0; padding: 18px 16px calc(18px + env(safe-area-inset-bottom));
-    max-height: 90vh; overflow: auto; }
-  .sheet h3 { margin: 0 0 4px; font-size: 18px; }
+  .sheet { background: var(--card); color: var(--ink); width: 100%; max-width: 640px; margin: 0 auto; border-radius: 24px 24px 0 0;
+    padding: 22px 20px calc(20px + env(safe-area-inset-bottom)); max-height: 90vh; overflow: auto; }
+  .sheet h3 { margin: 0 0 6px; font: 700 21px/1.25 var(--serif); color: var(--ink-strong); }
   .sheet .sum { font-size: 14px; color: var(--muted); margin-bottom: 4px; }
-  .sheet .actions { margin-top: 16px; }
+  .sheet .actions { margin-top: 18px; }
+  .sheet.center { text-align: center; }
+  .optlist button { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; text-align: left; padding: 14px 16px;
+    margin-top: 10px; border: 1px solid var(--line); border-radius: 16px; background: var(--card); color: var(--ink); min-height: 56px; }
+  .optlist button b { font-size: 15.5px; color: var(--ink-strong); } .optlist button span { font-size: 13px; color: var(--muted); }
 
-  /* delete, undo, trash, more */
-  .btn.danger { background: #fff; color: var(--bad); border: 1px solid var(--bad); }
+  /* ===== Delete, undo, trash, more ===== */
+  .btn.danger { background: transparent; color: var(--bad); border: 1.5px solid var(--bad); }
   .btn.dangerfill { background: var(--bad); color: #fff; }
+  :root[data-theme="dark"] .btn.dangerfill { color: #2A0F0C; }
   #actionBar .btns { display: flex; gap: 8px; }
-  #undoBar { position: fixed; left: 16px; right: 16px; bottom: calc(70px + env(safe-area-inset-bottom)); z-index: 12; background: #1c1f24;
-    color: #fff; border-radius: 10px; padding: 10px 14px; display: none; align-items: center; justify-content: space-between; gap: 10px; font-size: 15px; }
+  #undoBar { position: fixed; left: 16px; right: 16px; bottom: calc(96px + env(safe-area-inset-bottom)); z-index: 12; background: var(--toast);
+    color: var(--toast-ink); border-radius: 16px; padding: 10px 16px; display: none; align-items: center; justify-content: space-between; gap: 10px; font-size: 15px;
+    max-width: 608px; margin: 0 auto; }
   #undoBar.on { display: flex; }
-  #undoBar button { border: 0; background: none; color: #8fc1ff; font-weight: 700; font-size: 15px; }
-  .menu { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
-  .menu button { display: flex; justify-content: space-between; width: 100%; padding: 15px 14px; border: 0; border-bottom: 1px solid var(--line);
-    background: #fff; font-size: 16px; color: var(--ink); text-align: left; }
+  #undoBar button { border: 0; background: none; color: var(--gold-mark); font-weight: 700; font-size: 15px; min-height: 40px; }
+  .menu { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; margin-bottom: 14px; }
+  .menu button { display: flex; justify-content: space-between; align-items: center; gap: 10px; width: 100%; min-height: 54px; padding: 14px 16px; border: 0; border-bottom: 1px solid var(--line);
+    background: var(--card); font-size: 16px; color: var(--ink); text-align: left; }
   .menu button:last-child { border-bottom: 0; }
-  .menu button span { color: var(--muted); }
-  .trow { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 12px; margin-bottom: 8px;
-    display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; }
+  .menu button span { color: var(--muted); font-size: 14px; white-space: nowrap; }
+  .menu .row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+  .menu .row:last-child { border-bottom: 0; }
+  .menu .row .lbl { font-size: 16px; } .menu .row .seg { min-width: 200px; }
+  .menu .row .tgl { margin: 0; flex: 1; }
+  .trow { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 16px; margin-bottom: 10px;
+    display: grid; grid-template-columns: 1fr auto; gap: 3px 10px; }
   .trow .btns { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
-  .trow .btns button { border-radius: 8px; padding: 6px 12px; font-size: 14px; font-weight: 600; }
+  .trow .btns button { border-radius: 18px; padding: 7px 14px; font-size: 14px; font-weight: 700; min-height: 36px; background: transparent !important; }
 
-  /* tag input (risk notes) */
-  .tags { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; border: 1px solid var(--line); border-radius: 10px;
-    padding: 6px; background: #fff; min-height: 46px; }
+  /* ===== Tag input (risk notes) ===== */
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; border: 1px solid var(--line); border-radius: 14px;
+    padding: 6px 8px; background: var(--field); min-height: 48px; }
   .tags:focus-within { outline: 2px solid var(--accent); border-color: transparent; }
-  .tag { display: inline-flex; align-items: center; gap: 4px; background: var(--accent-soft); color: var(--accent);
-    border-radius: 14px; padding: 5px 6px 5px 10px; font-size: 14px; }
-  .tag button { border: 0; background: none; color: var(--accent); font-size: 16px; line-height: 1; padding: 0 4px; }
-  .tags input { flex: 1; min-width: 120px; border: 0; padding: 6px; outline: none; }
+  .tag { display: inline-flex; align-items: center; gap: 4px; background: var(--accent-soft); color: var(--ink-strong);
+    border-radius: 12px; padding: 5px 4px 5px 10px; font-size: 14px; font-weight: 600; }
+  .tag button { border: 0; background: none; color: var(--muted); font-size: 17px; line-height: 1; padding: 2px 6px; min-height: 28px; }
+  .tags input { flex: 1; min-width: 120px; border: 0; padding: 6px; outline: none; min-height: 34px; background: transparent; }
   .tags input:focus { outline: none; }
-  .sugg { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
-  .sugg button { border: 1px dashed var(--accent); background: #fff; color: var(--accent); border-radius: 14px; padding: 5px 10px; font-size: 14px; }
-  .sugg button b { font-weight: 700; }
-  .seglite { flex-wrap: wrap; }
+  .sugg { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .sugg button { border: 1px dashed var(--accent); background: transparent; color: var(--accent-text); border-radius: 14px; padding: 6px 11px; font-size: 14px; min-height: 34px; }
+  .sugg button b { font-weight: 800; }
 
-  /* nav, toast, loader */
-  nav { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid var(--line);
-    display: grid; grid-template-columns: repeat(4, 1fr); padding-bottom: env(safe-area-inset-bottom); z-index: 6; }
-  nav button { background: none; border: 0; padding: 10px 0 12px; font-size: 12px; color: var(--muted); }
-  nav button .ic { display: block; font-size: 20px; line-height: 1.2; }
-  nav button.on { color: var(--accent); font-weight: 600; }
-  #toast { position: fixed; left: 16px; right: 16px; top: 118px; background: #1c1f24; color: #fff; padding: 12px 14px;
-    border-radius: 10px; font-size: 15px; display: none; z-index: 25; text-align: center; }
-  #toast.err { background: var(--bad); }
-  #loader { position: fixed; inset: 0; background: rgba(245,246,248,.85); display: flex; align-items: center; justify-content: center;
+  /* ===== Nav, toast, loader ===== */
+  nav { position: fixed; bottom: calc(12px + env(safe-area-inset-bottom)); left: 12px; right: 12px; max-width: 616px; margin: 0 auto;
+    background: var(--card); border: 1px solid var(--line); border-radius: 26px; box-shadow: 0 8px 24px rgba(0,0,0,.10);
+    display: grid; grid-template-columns: 1fr 1fr 64px 1fr 1fr; align-items: center; padding: 6px; z-index: 6; }
+  nav button { background: none; border: 0; min-height: 52px; border-radius: 18px; font-size: 11.5px; color: var(--muted);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+  nav button svg { width: 22px; height: 22px; }
+  nav button.on { color: var(--ink-strong); font-weight: 700; background: var(--accent-soft); }
+  nav button.plus { width: 54px; height: 54px; min-height: 54px; margin: 0 auto; border-radius: 27px; background: var(--accent); color: var(--accent-ink); }
+  nav button.plus.on { background: var(--accent); color: var(--accent-ink); outline: 3px solid var(--accent-soft); }
+  nav button.plus svg { width: 26px; height: 26px; }
+  #toast { position: fixed; left: 16px; right: 16px; top: max(16px, env(safe-area-inset-top)); max-width: 608px; margin: 0 auto; background: var(--toast); color: var(--toast-ink);
+    padding: 12px 16px; border-radius: 16px; font-size: 15px; display: none; z-index: 25; align-items: center; gap: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.18); pointer-events: none; }
+  #toast.on { display: flex; }
+  #toast.err { background: var(--bad); color: #fff; }
+  :root[data-theme="dark"] #toast.err { color: #2A0F0C; }
+  #toast .tx { flex: 1; } #toast .tx b { display: block; font: 700 16px/1.3 var(--serif); }
+  #loader { position: fixed; inset: 0; background: color-mix(in srgb, var(--bg) 85%, transparent); display: flex; flex-direction: column; gap: 10px; align-items: center; justify-content: center;
     z-index: 20; font-size: 15px; color: var(--muted); }
   #loader.off { display: none; }
+  .sui { display: inline-block; flex: none; }
+  .sui-hide .sui { display: none !important; }
 </style>
 </head>
 <body>
-<header>
+<header id="hdr" class="home">
   <div class="brand">
     <div class="mono" id="mono" aria-hidden="true">CT</div>
     <div>
@@ -211,11 +339,34 @@
 </header>
 
 <main>
+  <!-- HOME -->
+  <section id="s-home" class="screen on">
+    <div class="greet">
+      <div><div class="d" id="hDate"></div><div class="g" id="hGreet">Hello.</div></div>
+      <span id="hSui"></span>
+    </div>
+    <button type="button" class="hero" onclick="drillTo('Waiting to be paid', r => money(r).due > 0 && r.status !== 'Written off', true)">
+      <span class="k">Waiting to be paid</span><span class="v" id="hDue">₹0</span><span class="s" id="hDueSub"></span>
+    </button>
+    <div class="duo">
+      <div><span id="hMonthLbl">Billed this month</span><b id="hBilled">₹0</b></div>
+      <div><span id="hCollLbl">Collected this month</span><b id="hColl">₹0</b></div>
+    </div>
+    <button type="button" class="btn primary bigadd" onclick="nav('add')">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+      Log a case
+    </button>
+    <div class="sect">Gentle reminders</div>
+    <div id="hRemind"></div>
+    <div class="sect" style="margin-top:18px">Recent cases</div>
+    <div id="hRecent"></div>
+  </section>
+
   <!-- ADD / EDIT -->
-  <section id="s-add" class="screen on">
+  <section id="s-add" class="screen">
     <form id="f" autocomplete="off" onsubmit="return false">
       <div class="card">
-        <h3>Case</h3>
+        <h3>Patient &amp; procedure</h3>
         <div class="row2">
           <div><label>Date <span class="req">*</span></label><input type="date" id="date" required></div>
           <div><label>IP / UHID no.</label><input id="uhid" inputmode="text"></div>
@@ -223,10 +374,11 @@
         <label>Patient name <span class="req">*</span></label><input id="patient" autocapitalize="words">
         <div class="row2">
           <div><label>Age (years) <span class="req">*</span></label><input id="age" type="number" inputmode="decimal" min="0" max="120" step="any" placeholder="e.g. 45 or 0.5"></div>
-          <div><label>Gender <span class="req">*</span></label><select id="gender"></select></div>
+          <div><label>Gender <span class="req">*</span></label><select id="gender" class="is-seg"></select><div class="segc" id="genderSeg"></div></div>
         </div>
         <label>Hospital <span class="req">*</span></label>
-        <select id="hospital"></select>
+        <div class="hchips" id="hChips"></div>
+        <select id="hospital" class="hidden-sel" style="margin-top:8px"></select>
         <input id="hospitalNew" placeholder="New hospital name" style="display:none;margin-top:6px">
         <label>Surgeon <span class="req">*</span></label>
         <select id="surgeon"></select>
@@ -238,22 +390,24 @@
         <label>Case description</label>
         <select id="caseDesc"></select>
         <input id="caseDescNew" placeholder="New description, e.g. Lap chole" style="display:none;margin-top:6px">
-        <label>Elective / Emergency <span class="req">*</span></label>
-        <select id="urgency"></select>
-        <label>Yojana / Private <span class="req">*</span></label>
-        <div class="seg" id="scheme">
-          <button type="button" data-v="Yojana" onclick="setScheme('Yojana')">Yojana</button>
-          <button type="button" data-v="Private" onclick="setScheme('Private')">Private</button>
+        <div class="row2">
+          <div><label>Elective / Emergency <span class="req">*</span></label>
+            <select id="urgency" class="is-seg"></select><div class="segc" id="urgencySeg"></div></div>
+          <div><label>Yojana / Private <span class="req">*</span></label>
+            <div class="seg" id="scheme">
+              <button type="button" data-v="Yojana" onclick="setScheme('Yojana')">Yojana</button>
+              <button type="button" data-v="Private" onclick="setScheme('Private')">Private</button>
+            </div></div>
         </div>
         <label>Risk notes</label>
         <div class="tags" id="riskBox" onclick="$('riskInput').focus()">
-          <input id="riskInput" placeholder="Type a risk, then tap a suggestion or press return" autocapitalize="sentences" autocomplete="off" enterkeyhint="done">
+          <input id="riskInput" placeholder="Add a risk note…" autocapitalize="sentences" autocomplete="off" enterkeyhint="done">
         </div>
         <div class="sugg" id="riskSugg"></div>
       </div>
 
       <div class="card">
-        <h3>Fee</h3>
+        <h3>Fee &amp; payment</h3>
         <label>Fee charged (₹) <span class="req">*</span></label>
         <input id="fee" type="number" inputmode="numeric" min="1" step="1">
         <button type="button" class="hint" id="feeHint"></button>
@@ -304,7 +458,7 @@
       </div>
 
       <div class="actions">
-        <button type="button" class="btn primary" id="saveBtn" onclick="save(false)">Save</button>
+        <button type="button" class="btn primary" id="saveBtn" onclick="save(false)">Save case</button>
         <button type="button" class="btn ghost" id="saveAddBtn" onclick="save(true)">Save &amp; add another</button>
         <button type="button" class="btn plain" id="cancelBtn" onclick="cancelEdit()" style="display:none">Cancel edit</button>
         <button type="button" class="btn danger" id="delCaseBtn" onclick="askDelete([S.editId])" style="display:none">Delete this case</button>
@@ -325,15 +479,20 @@
     </div>
     <div class="drill" id="drillBar" style="display:none"><span id="drillLabel"></span><button onclick="clearDrill()">Clear ✕</button></div>
     <div class="filters" id="recFilters">
-      <select id="fPeriod" onchange="renderRecords()">
+      <select id="fPeriod" onchange="rPeriodChange()" aria-label="Period">
         <option value="thisMonth">This month</option>
         <option value="lastMonth">Last month</option>
         <option value="thisFY" selected>This FY</option>
         <option value="lastFY">Last FY</option>
         <option value="all">All time</option>
+        <option value="custom">Custom dates…</option>
       </select>
       <select id="fHospital" onchange="renderRecords()"></select>
-      <select id="fStatus" onchange="renderRecords()"></select>
+      <select id="fStatus" onchange="renderRecords()" aria-label="Status"></select>
+    </div>
+    <div class="row2 custom-dates" id="rCustom">
+      <div><label for="rFrom">From</label><input type="date" id="rFrom" onchange="renderRecords()"></div>
+      <div><label for="rTo">To</label><input type="date" id="rTo" onchange="renderRecords()"></div>
     </div>
     <div class="summary">
       <div class="kpi"><b id="kCases">0</b><span>Cases</span></div>
@@ -344,8 +503,9 @@
   </section>
 
   <section id="s-dash" class="screen">
+    <div class="pchips" id="dPChips" role="group" aria-label="Period"></div>
     <div class="dfilters">
-      <select id="dPeriod" onchange="dPeriodChange()">
+      <select id="dPeriod" onchange="dPeriodChange()" aria-hidden="true" tabindex="-1">
         <option value="thisMonth">This month</option>
         <option value="lastMonth">Last month</option>
         <option value="thisFY" selected>This FY</option>
@@ -354,10 +514,11 @@
         <option value="custom">Custom dates…</option>
       </select>
       <button id="dMoreBtn" onclick="$('dPanel').classList.toggle('open')">Filters</button>
+      <button id="dExpBtn" onclick="openExport()">Export</button>
     </div>
     <div id="dCustom" class="row2" style="display:none;margin-bottom:8px">
-      <div><label>From</label><input type="date" id="dFrom" onchange="renderDash()"></div>
-      <div><label>To</label><input type="date" id="dTo" onchange="renderDash()"></div>
+      <div><label for="dFrom">From</label><input type="date" id="dFrom" onchange="renderDash()"></div>
+      <div><label for="dTo">To</label><input type="date" id="dTo" onchange="renderDash()"></div>
     </div>
     <div id="dPanel" class="card">
       <p class="tip">Pick one or more in each. Leave blank for all.</p>
@@ -367,7 +528,6 @@
       <label>Payment status</label><select id="dStatus" multiple onchange="renderDash()"></select>
       <label>Payment mode</label><select id="dPayMode" multiple onchange="renderDash()"></select>
       <label>Elective / Emergency</label><select id="dUrgency" multiple onchange="renderDash()"></select>
-      <label>Gender</label><select id="dGender" multiple onchange="renderDash()"></select>
       <label>Yojana / Private</label><select id="dScheme" multiple onchange="renderDash()"></select>
       <label>Shared / Independent</label><select id="dKind" multiple onchange="renderDash()"></select>
       <label>Co-anaesthesiologist</label><select id="dCo" multiple onchange="renderDash()"></select>
@@ -383,14 +543,23 @@
   </section>
   <section id="s-more" class="screen">
     <div class="menu">
+      <div class="row"><span class="lbl">Appearance</span>
+        <div class="seg" id="themeSeg">
+          <button type="button" data-v="auto" onclick="setTheme('auto')">Auto</button>
+          <button type="button" data-v="light" onclick="setTheme('light')">Light</button>
+          <button type="button" data-v="dark" onclick="setTheme('dark')">Dark</button>
+        </div></div>
+      <div class="row"><label class="tgl"><span>Show Sui, the mascot</span><input type="checkbox" id="suiTgl" onchange="setSui(this.checked)"><span class="knob"></span></label></div>
+    </div>
+    <div class="menu">
       <button onclick="openLists()">Manage lists <span>›</span></button>
       <button id="ledgerMenu" onclick="openLedger()">Colleague balances <span>›</span></button>
       <button onclick="openTrash()">Trash <span id="trashCount">›</span></button>
-      <button onclick="askStatement()">Send dues statement now <span>Email + WhatsApp ›</span></button>
+      <button onclick="askStatement()">Send dues statement now <span>PDF ›</span></button>
       <button onclick="doBackup()">Back up now <span id="backupInfo">›</span></button>
       <button onclick="load()">Refresh data <span>↻</span></button>
     </div>
-    <p style="font-size:13px;color:var(--muted);margin:12px 4px">To export cases to Excel: Records → filter → <b>Export</b>.
+    <p style="font-size:13px;color:var(--muted);margin:12px 4px">Exports: Insights → <b>Export</b> (cases, summary, FY summary for your CA), or Records → <b>Export</b>.
       A full backup of everything is also saved automatically on the 1st of each month.</p>
   </section>
 
@@ -431,11 +600,12 @@
   </section>
 </main>
 
-<nav>
-  <button data-s="dash" onclick="nav('dash')"><span class="ic">▤</span>Dashboard</button>
-  <button data-s="add" class="on" onclick="nav('add')"><span class="ic">＋</span>Add</button>
-  <button data-s="records" onclick="nav('records')"><span class="ic">☰</span>Records</button>
-  <button data-s="more" onclick="nav('more')"><span class="ic">⋯</span>More</button>
+<nav aria-label="Main">
+  <button data-s="home" class="on" onclick="nav('home')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-5H9v5H5a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>Home</button>
+  <button data-s="records" onclick="nav('records')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="4.5" cy="6" r="1.3" fill="currentColor"/><circle cx="4.5" cy="12" r="1.3" fill="currentColor"/><circle cx="4.5" cy="18" r="1.3" fill="currentColor"/></svg>Records</button>
+  <button data-s="add" class="plus" onclick="nav('add')" aria-label="Log a case"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button>
+  <button data-s="dash" onclick="nav('dash')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19V11M12 19V5M19 19v-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Insights</button>
+  <button data-s="more" onclick="nav('more')"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.7" fill="currentColor"/><circle cx="12" cy="12" r="1.7" fill="currentColor"/><circle cx="19" cy="12" r="1.7" fill="currentColor"/></svg>More</button>
 </nav>
 
 <div id="actionBar">
@@ -532,8 +702,31 @@
   </div>
 </div>
 
-<div id="toast"></div>
-<div id="loader">Loading…</div>
+<div class="modal" id="expModal" onclick="if (event.target === this) this.classList.remove('on')">
+  <div class="sheet">
+    <h3>Export</h3>
+    <div class="sum" id="expSum"></div>
+    <div class="optlist">
+      <button type="button" onclick="doExport('cases')"><b>Cases (Excel)</b><span>Every case in this view</span></button>
+      <button type="button" onclick="doExport('summary')"><b>Summary (Excel)</b><span>By month, hospital, case type, colleague, and dues ageing</span></button>
+      <button type="button" onclick="doExport('fy')"><b>FY summary for CA (Excel)</b><span id="expFyLbl">Income by month and hospital for the financial year</span></button>
+      <button type="button" onclick="$('expModal').classList.remove('on');askStatement()"><b>Dues statement (PDF)</b><span>Emailed, with a copy in Drive</span></button>
+    </div>
+    <div class="actions"><button class="btn plain" onclick="$('expModal').classList.remove('on')">Cancel</button></div>
+  </div>
+</div>
+
+<div class="modal" id="clearModal" onclick="if (event.target === this) this.classList.remove('on')">
+  <div class="sheet center">
+    <div id="clearSui"></div>
+    <h3 id="clearTitle">All clear</h3>
+    <div class="sum" id="clearSum"></div>
+    <div class="actions"><button class="btn primary" onclick="$('clearModal').classList.remove('on')">Lovely</button></div>
+  </div>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+<div id="loader"><span id="loaderSui"></span><span id="loaderTx">Loading…</span></div>
 
 <script>
 const S = { lists: {}, records: [], lastHospital: '', fyStartMonth: 4, ageing: [30, 60, 90], overdueDays: 60, editId: null };
@@ -548,11 +741,57 @@ const iso = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.get
 const today = () => iso(new Date());
 const nice = s => { if (!s) return ''; const [y, m, d] = s.split('-'); return d + ' ' + ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m - 1] + ' ' + y; };
 
-function toast(msg, isErr) {
-  const t = $('toast'); t.textContent = msg; t.className = isErr ? 'err' : ''; t.style.display = 'block';
-  clearTimeout(toast.t); toast.t = setTimeout(() => t.style.display = 'none', isErr ? 4500 : 2500);
+// toast(msg) · toast(msg, true) for errors · toast(msg, false, { title, pose }) for a Sui moment
+function toast(msg, isErr, o = {}) {
+  const t = $('toast');
+  t.innerHTML = (o.pose && !isErr ? sui(o.pose, 48) : '') + `<div class="tx">${o.title ? `<b>${esc(o.title)}</b>` : ''}${esc(msg)}</div>`;
+  t.className = 'on' + (isErr ? ' err' : '');
+  clearTimeout(toast.t); toast.t = setTimeout(() => t.className = '', isErr ? 4500 : (o.title ? 3200 : 2500));
 }
-function busy(on, msg) { $('loader').textContent = msg || 'Loading…'; $('loader').classList.toggle('off', !on); }
+function busy(on, msg) { $('loaderTx').textContent = msg || 'Loading…'; $('loader').classList.toggle('off', !on); }
+
+/* ---------- Sui, the mascot (a calm line-drawn syringe) ---------- */
+// poses: hello · clear (celebrating) · wait · rest
+function sui(pose, size) {
+  const L = 'style="fill:var(--sui-line)"', Ls = 'style="stroke:var(--sui-line)"', G = 'style="fill:var(--gold-mark)"';
+  const tilt = pose === 'rest' ? -12 : -28;
+  const liquid = pose === 'wait' ? '<rect x="100" y="67" width="11" height="26" rx="5" style="fill:var(--sui-liquid)"/>' : '<rect x="84" y="67" width="27" height="26" rx="8" style="fill:var(--sui-liquid)"/>';
+  const face = {
+    hello: `<circle cx="72" cy="79" r="3" ${L}/><circle cx="88" cy="79" r="3" ${L}/><path d="M74 86 Q80 91 86 86" fill="none" ${Ls} stroke-width="2.5" stroke-linecap="round"/>`,
+    clear: `<path d="M68 80 Q72 75 76 80M84 80 Q88 75 92 80" fill="none" ${Ls} stroke-width="2.5" stroke-linecap="round"/><path d="M72 85 Q80 94 88 85" ${L} ${Ls} stroke-width="2" stroke-linejoin="round"/>`,
+    wait: `<circle cx="73" cy="77" r="3" ${L}/><circle cx="89" cy="77" r="3" ${L}/><path d="M75 88 H85" fill="none" ${Ls} stroke-width="2.5" stroke-linecap="round"/>`,
+    rest: `<path d="M68 79 Q72 83 76 79M84 79 Q88 83 92 79" fill="none" ${Ls} stroke-width="2.5" stroke-linecap="round"/><circle cx="80" cy="88" r="2.5" ${L}/>`
+  }[pose] || '';
+  const cheeks = pose === 'hello' || pose === 'clear' ? '<circle cx="65" cy="86" r="3" style="fill:var(--sui-cheek)" opacity=".7"/><circle cx="95" cy="86" r="3" style="fill:var(--sui-cheek)" opacity=".7"/>' : '';
+  const extra = {
+    clear: `<path d="M30 34l3 7 7 3-7 3-3 7-3-7-7-3 7-3z" ${G}/><path d="M136 30l2 4 4 2-4 2-2 4-2-4-4-2 4-2z" ${G} opacity=".7"/><path d="M128 120l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" ${G}/>`,
+    wait: `<circle cx="112" cy="30" r="3.5" ${G}/><circle cx="124" cy="30" r="3.5" ${G} opacity=".7"/><circle cx="136" cy="30" r="3.5" ${G} opacity=".4"/>`,
+    rest: `<text x="112" y="44" font-family="Fraunces, Georgia, serif" font-size="20" font-weight="700" ${G}>z</text><text x="128" y="30" font-family="Fraunces, Georgia, serif" font-size="14" font-weight="700" ${G} opacity=".7">z</text>`
+  }[pose] || '';
+  return `<svg class="sui" viewBox="0 0 160 160" width="${size}" height="${size}" aria-hidden="true">${extra}<g transform="rotate(${tilt} 80 80)">
+    <rect x="14" y="68" width="10" height="24" rx="3" ${G}/><rect x="24" y="76" width="22" height="8" rx="2" ${L}/><rect x="44" y="60" width="6" height="40" rx="3" ${L}/>
+    <rect x="50" y="62" width="66" height="36" rx="12" style="fill:var(--sui-body);stroke:var(--sui-line)" stroke-width="3"/>${liquid}
+    <path d="M116 72L128 78L128 82L116 88Z" ${L}/><path d="M128 80H150" ${Ls} stroke-width="2.5" stroke-linecap="round"/>${face}${cheeks}</g></svg>`;
+}
+
+/* ---------- appearance (per device) ---------- */
+function getPref(k, d) { try { return localStorage.getItem(k) || d; } catch (e) { return d; } }
+function setPref(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+function setTheme(t) {
+  setPref('ct-theme', t);
+  if (t === 'auto') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme', t);
+  [...$('themeSeg').children].forEach(b => b.classList.toggle('on', b.dataset.v === t));
+}
+function setSui(on) {
+  setPref('ct-sui', on ? 'on' : 'off');
+  document.documentElement.classList.toggle('sui-hide', !on);
+  $('suiTgl').checked = on;
+}
+function initAppearance() {
+  setTheme(getPref('ct-theme', 'auto'));
+  setSui(getPref('ct-sui', 'on') !== 'off');
+  $('loaderSui').innerHTML = sui('wait', 72);
+}
 function call(fn, ...args) {
   return new Promise((ok, bad) => google.script.run.withSuccessHandler(ok).withFailureHandler(bad)[fn](...args));
 }
@@ -577,7 +816,7 @@ function apply(d) {
   S.trackSettlements = d.trackSettlements !== false;
   if ($('ledgerMenu')) $('ledgerMenu').style.display = S.trackSettlements ? '' : 'none';
   S.bulkConfirm = d.bulkConfirm || 20; S.undoSeconds = d.undoSeconds || 10; S.trashDays = d.trashDays || 30;
-  fillSelects(); fillDashSelects(); renderRecords(); renderDash();
+  fillSelects(); fillDashSelects(); renderRecords(); renderDash(); renderHome();
 }
 async function load() {
   busy(true);
@@ -607,6 +846,9 @@ function fillSelects() {
   opts($('fStatus'), [...new Set([...L.statuses, 'Split pending'])], { all: 'All statuses' });
   opts($('urgency'), L.urgency.length ? L.urgency : ['Elective', 'Emergency']);
   opts($('gender'), L.genders && L.genders.length ? L.genders : ['Male', 'Female', 'Other'], { all: 'Select' });
+  segFor('gender', 'genderSeg', { Male: 'M', Female: 'F', Other: 'Other' });
+  segFor('urgency', 'urgencySeg');
+  renderHospChips();
   opts($('caseDesc'), L.caseDescs || [], { all: '—', addNew: true });
   opts($('coAnaes'), L.coAnaes || [], { placeholder: 'Select', addNew: true });
   opts($('payMode'), L.payModes.length ? L.payModes : ['Cash', 'UPI', 'NEFT/RTGS transfer', 'Cheque'], { all: 'Select' });
@@ -693,6 +935,40 @@ $('sharedTgl').addEventListener('change', sharedUI);
 $('myShare').addEventListener('input', sharedUI);
 $('fee').addEventListener('input', sharedUI);
 
+
+/* ---------- segmented buttons that drive a hidden <select> ---------- */
+function segFor(selId, segId, short = {}) {
+  const sel = $(selId), box = $(segId);
+  const vals = [...sel.options].map(o => o.value).filter(v => v);
+  box.innerHTML = vals.map(v => `<button type="button" data-v="${esc(v)}" aria-label="${esc(v)}">${esc(short[v] || v)}</button>`).join('');
+  box.onclick = e => { const b = e.target.closest('button'); if (!b) return; sel.value = b.dataset.v; sel.dispatchEvent(new Event('change')); syncSegs(); };
+  syncSegs();
+}
+function syncSegs() {
+  [['gender', 'genderSeg'], ['urgency', 'urgencySeg']].forEach(([s, b]) => {
+    if (!$(b)) return;
+    [...$(b).children].forEach(x => x.classList.toggle('on', x.dataset.v === $(s).value));
+  });
+}
+
+/* ---------- hospital chips: 5 most used + More ---------- */
+function renderHospChips() {
+  const sel = $('hospital'), cur = sel.value;
+  const count = {};
+  S.records.forEach(r => { if (r.hospital) count[r.hospital] = (count[r.hospital] || 0) + 1; });
+  let top = (S.lists.hospitals || []).slice().sort((a, b) => (count[b] || 0) - (count[a] || 0)).slice(0, 5);
+  if (cur && cur !== NEW && !top.includes(cur)) top = [cur].concat(top.slice(0, 4));
+  const open = !sel.classList.contains('hidden-sel');
+  $('hChips').innerHTML = top.map(h => `<button type="button" class="${h === cur ? 'on' : ''}" data-h="${esc(h)}">${esc(h)}</button>`).join('') +
+    `<button type="button" class="more" data-more="1">${open ? 'Hide list' : '+ More'}</button>`;
+  $('hChips').onclick = e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.more) { sel.classList.toggle('hidden-sel'); renderHospChips(); return; }
+    sel.value = b.dataset.h; sel.dispatchEvent(new Event('change'));
+  };
+}
+$('hospital').addEventListener('change', () => { if ($('hospital').value === NEW) $('hospital').classList.remove('hidden-sel'); renderHospChips(); });
+
 /* ---------- scheme + risk notes ---------- */
 let SCHEME = 'Private', RISKS = [];
 function setScheme(v) {
@@ -765,9 +1041,10 @@ function resetForm(keepHospital) {
   sharedUI();
   $('payBox').style.display = 'none'; $('more').open = false;
   $('saveAddBtn').style.display = ''; $('cancelBtn').style.display = 'none'; $('delCaseBtn').style.display = 'none';
-  $('saveBtn').textContent = 'Save';
+  $('saveBtn').textContent = 'Save case';
+  $('hospital').classList.add('hidden-sel'); renderHospChips(); syncSegs();
   overWarn(); feeHint();
-  if (currentScreen === 'add') setTitle('Add case');
+  if (currentScreen === 'add') setTitle('New case');
 }
 
 function readForm() {
@@ -838,9 +1115,9 @@ async function save(another) {
   try {
     const d = await call('saveCase', c);
     apply(d);
-    toast((editing ? 'Updated ' : 'Saved ') + d.savedId);
+    toast(`${d.savedId} · ${c.hospital} · ${inr(c.fee)}`, false, { title: editing ? 'Changes saved' : 'Case saved', pose: 'hello' });
     resetForm(true);
-    if (editing || !another) go('records');
+    if (editing) go('records'); else if (!another) nav('home');
   } catch (e) {
     toast(e.message || String(e), true);
   } finally {
@@ -877,6 +1154,7 @@ function edit(id) {
   sharedUI();
   $('saveAddBtn').style.display = 'none'; $('cancelBtn').style.display = ''; $('delCaseBtn').style.display = '';
   $('saveBtn').textContent = 'Save changes';
+  renderHospChips(); syncSegs();
   overWarn(); feeHint();
   go('add', 'Edit ' + id);
 }
@@ -885,6 +1163,68 @@ function setOrNew(id, v) {
   else { $(id).value = NEW; $(id + 'New').value = v; $(id + 'New').style.display = 'block'; }
 }
 function cancelEdit() { resetForm(false); go('records'); }
+
+
+/* ---------- home ---------- */
+function emptyState(title, text) {
+  return `<div class="empty">${sui('wait', 84)}<b>${esc(title)}</b>${esc(text || '')}</div>`;
+}
+function renderHome() {
+  if (!$('hDue')) return;
+  const now = new Date(), h = now.getHours();
+  const late = h >= 22 || h < 5;
+  const name = String($('docName').textContent || '').trim();
+  const sur = name && name !== 'Case Tracker' ? name.split(/\s+/).pop() : '';
+  const todays = S.records.filter(r => r.date === today()).length;
+  $('hDate').textContent = now.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' });
+  const hello = late ? 'Late list tonight?' : h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  const line = late ? 'Log it in a minute.' : todays ? `${todays} case${todays === 1 ? '' : 's'} logged today.` : 'Calm day ahead.';
+  $('hGreet').innerHTML = (late ? hello : `${hello}${sur ? ',<br>Dr. ' + esc(sur) : ''}.`) + `<span class="s">${line}</span>`;
+  $('hSui').innerHTML = sui(late ? 'rest' : 'hello', 84);
+
+  const open = S.records.filter(r => r.status !== 'Written off' && money(r).due > 0);
+  const due = sum(open, r => money(r).due);
+  const old90 = sum(open.filter(r => age(r) > 90), r => money(r).due);
+  $('hDue').textContent = inr(due);
+  $('hDueSub').textContent = open.length ? `${open.length} case${open.length === 1 ? '' : 's'}${old90 ? ` · ${inr(old90)} is over 90 days` : ''}` : 'Nothing outstanding';
+  const [mf, mt] = periodRange('thisMonth');
+  const mrows = S.records.filter(r => r.date >= mf && r.date <= mt);
+  $('hMonthLbl').textContent = 'Billed · ' + now.toLocaleDateString('en-IN', { month: 'long' });
+  $('hCollLbl').textContent = 'Collected · ' + now.toLocaleDateString('en-IN', { month: 'long' });
+  $('hBilled').textContent = inr(sum(mrows, r => money(r).earn || 0));
+  $('hColl').textContent = inr(sum(mrows, r => money(r).got || 0));
+
+  // gentle reminders
+  const od = S.overdueDays || 60, items = [];
+  const byH = {};
+  open.forEach(r => { if (r.collector === 'Colleague') return; const k = r.hospital; byH[k] = byH[k] || { due: 0, oldest: 0, ids: [] }; byH[k].due += money(r).due; byH[k].oldest = Math.max(byH[k].oldest, age(r)); byH[k].ids.push(r.id); });
+  Object.entries(byH).filter(([, v]) => v.oldest > od).sort((a, b) => b[1].due - a[1].due).slice(0, 3)
+    .forEach(([k, v]) => items.push({ label: `${k}, ${v.oldest} days`, val: inr(v.due), ids: v.ids, dl: `Outstanding at ${k}` }));
+  const pend = S.records.filter(r => money(r).sharePending);
+  if (pend.length) items.push({ label: 'Splits to agree', val: `${pend.length} case${pend.length === 1 ? '' : 's'}`, gold: true, ids: pend.map(r => r.id), dl: 'Split pending' });
+  if (S.trackSettlements) {
+    const owedTo = sum(S.records, r => money(r).owedTo), owedBy = sum(S.records, r => money(r).owedBy);
+    if (owedTo) items.push({ label: 'You owe colleagues', val: inr(owedTo), ledger: true });
+    if (owedBy) items.push({ label: 'Colleagues owe you', val: inr(owedBy), ledger: true });
+  }
+  window._remind = items;
+  $('hRemind').innerHTML = items.length ? items.map((it, i) =>
+    `<button type="button" class="remind" onclick="remindTap(${i})"><span>${esc(it.label)}</span><b class="${it.gold ? 'gold' : ''}">${esc(it.val)}</b></button>`).join('')
+    : `<div class="calm">${sui('clear', 56)}<div><b>Nothing needs you</b>No overdue dues or pending splits.</div></div>`;
+
+  const recent = S.records.slice().sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id)).slice(0, 3);
+  $('hRecent').innerHTML = recent.length ? recent.map(r => `
+    <div class="rec" onclick="edit('${esc(r.id)}')">
+      <div class="name">${esc(r.patient)}</div><div class="amt">${inr(r.fee)}</div>
+      <div class="meta">${nice(r.date)} · ${esc(r.hospital)}</div>
+      <span class="badge b-${esc(String(r.status).split(' ')[0])}">${esc(r.status)}</span>
+    </div>`).join('') : emptyState('No cases yet', 'Tap “Log a case” to add the first one.');
+}
+function remindTap(i) {
+  const it = window._remind[i]; if (!it) return;
+  if (it.ledger) return openLedger();
+  DRILL = { label: it.dl, ids: new Set(it.ids) }; $('search').value = ''; go('records'); renderRecords();
+}
 
 /* ---------- records ---------- */
 function periodRange(p) {
@@ -900,9 +1240,15 @@ function periodRange(p) {
   }
 }
 
+function rPeriodChange() {
+  $('rCustom').classList.toggle('on', $('fPeriod').value === 'custom');
+  renderRecords();
+}
 function renderRecords() {
   const q = $('search').value.trim().toLowerCase();
-  const [from, to] = periodRange($('fPeriod').value);
+  const [from, to] = $('fPeriod').value === 'custom'
+    ? [$('rFrom').value || '0000-01-01', $('rTo').value || '9999-12-31']
+    : periodRange($('fPeriod').value);
   const h = $('fHospital').value, st = $('fStatus').value;
   $('drillBar').style.display = DRILL ? 'flex' : 'none';
   $('recFilters').style.display = DRILL ? 'none' : '';
@@ -929,11 +1275,11 @@ function renderRecords() {
       <div class="amt">${inr(r.fee)}</div>
       <div class="meta">${nice(r.date)} · ${esc(r.hospital)}</div>
       <span class="badge b-${esc(String(r.status).split(' ')[0])}">${esc(r.status)}</span>
-      <div class="meta">${esc(r.caseType)}${r.caseDesc ? ' – ' + esc(r.caseDesc) : ''} · ${esc(r.surgeon)}${r.scheme === 'Yojana' ? ' · <b style="color:var(--accent);font-weight:600">Yojana</b>' : ''}</div>
+      <div class="meta">${esc(r.caseType)}${r.caseDesc ? ' – ' + esc(r.caseDesc) : ''} · ${esc(r.surgeon)}${r.scheme === 'Yojana' ? ' · <b style="color:var(--accent-text);font-weight:700">Yojana</b>' : ''}</div>
       <div class="meta r" style="text-align:right">${open(r) ? 'Due ' + inr(r.balance) : r.status === 'Split pending' ? '' : esc(r.id)}</div>
       ${r.shared ? `<div class="meta" style="grid-column:1/-1">${r.role === 'Handed over' ? 'Handed over to' : 'Took over from'} ${esc(r.coAnaes)} · ${r.collector === 'Me' ? 'I collect' : r.collector === 'Colleague' ? 'Colleague collects' : 'Paid separately'}${money(r).earn != null ? ` · my share ${inr(money(r).earn)}` : ' · <b style="color:var(--o3)">split pending</b>'}${S.trackSettlements && money(r).owedTo ? ` · <b style="color:var(--bad)">I owe ${inr(money(r).owedTo)}</b>` : ''}</div>` : ''}
       ${!SEL_MODE ? cardActions(r) : ''}
-    </div>`).join('') : '<div class="empty">No cases match these filters.</div>';
+    </div>`).join('') : emptyState('No cases match these filters', 'Try a wider date range or clear the filters.');
   updateSelUI();
 }
 
@@ -942,7 +1288,7 @@ function renderRecords() {
 let DRILL = null;      // { label, ids } set when a chart is tapped
 let EARN_BY = 'hospital';
 const DIMS = [['dHospital', 'hospital', 'Hospital'], ['dCaseType', 'caseType', 'Case type'], ['dSurgeon', 'surgeon', 'Surgeon'],
-  ['dStatus', 'status', 'Status'], ['dPayMode', 'payMode', 'Mode'], ['dUrgency', 'urgency', ''], ['dGender', 'gender', ''], ['dScheme', 'scheme', ''],
+  ['dStatus', 'status', 'Status'], ['dPayMode', 'payMode', 'Mode'], ['dUrgency', 'urgency', ''], ['dScheme', 'scheme', ''],
   ['dKind', 'kind', ''], ['dCo', 'coAnaes', 'With'], ['dRole', 'roleLabel', '']];
 const STATUS_COLOR = { 'Paid': 'var(--st-good)', 'Partially paid': 'var(--st-warn)', 'Pending': 'var(--st-crit)', 'Split pending': 'var(--o2)', 'Written off': 'var(--st-off)' };
 const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -956,7 +1302,6 @@ function fillDashSelects() {
   const L = S.lists;
   const src = { dHospital: L.hospitals, dCaseType: L.caseTypes, dSurgeon: L.surgeons, dStatus: L.statuses,
     dPayMode: L.payModes, dUrgency: L.urgency.length ? L.urgency : ['Elective', 'Emergency'],
-    dGender: L.genders && L.genders.length ? L.genders : ['Male', 'Female', 'Other'],
     dScheme: L.schemes && L.schemes.length ? L.schemes : ['Private', 'Yojana'],
     dKind: ['Independent', 'Shared'], dCo: L.coAnaes || [], dRole: ['Took over', 'Handed over'] };
   Object.entries(src).forEach(([id, items]) => {
@@ -968,20 +1313,47 @@ function fillDashSelects() {
   });
 }
 
+const PERIODS = [['thisMonth', 'This month'], ['lastMonth', 'Last month'], ['thisFY', 'This FY'], ['lastFY', 'Last FY'], ['all', 'All time'], ['custom', 'Custom']];
+function renderPChips() {
+  const cur = $('dPeriod').value;
+  $('dPChips').innerHTML = PERIODS.map(([v, l]) =>
+    `<button type="button" class="${v === cur ? 'on' : ''}" aria-pressed="${v === cur}" onclick="setPeriod('${v}')">${l}</button>`).join('');
+}
+function setPeriod(v) { $('dPeriod').value = v; dPeriodChange(); }
 function dPeriodChange() {
   $('dCustom').style.display = $('dPeriod').value === 'custom' ? 'grid' : 'none';
   renderDash();
+}
+// same-length window just before the selected period, for the ▲/▼ comparisons
+function shiftISO(s, { y = 0, m = 0, d = 0 }) {
+  const x = new Date(s + 'T00:00:00'), day = x.getDate();
+  x.setDate(1); x.setFullYear(x.getFullYear() + y); x.setMonth(x.getMonth() + m);
+  x.setDate(Math.min(day, new Date(x.getFullYear(), x.getMonth() + 1, 0).getDate()));
+  x.setDate(x.getDate() + d);
+  return iso(x);
+}
+function prevRange() {
+  const p = $('dPeriod').value, [f, t] = dashRange(), td = today();
+  if (p === 'thisMonth') return [shiftISO(f, { m: -1 }), shiftISO(td, { m: -1 }), 'vs same days last month'];
+  if (p === 'lastMonth') return [shiftISO(f, { m: -1 }), iso(new Date(+f.slice(0, 4), +f.slice(5, 7) - 1, 0)), 'vs the month before'];
+  if (p === 'thisFY') return [shiftISO(f, { y: -1 }), shiftISO(td, { y: -1 }), 'vs same time last FY'];
+  if (p === 'lastFY') return [shiftISO(f, { y: -1 }), shiftISO(t, { y: -1 }), 'vs the FY before'];
+  if (p === 'custom' && $('dFrom').value && $('dTo').value) {
+    const n = Math.round((Date.parse(t) - Date.parse(f)) / 864e5) + 1;
+    return [shiftISO(f, { d: -n }), shiftISO(f, { d: -1 }), `vs previous ${n} days`];
+  }
+  return null;
 }
 function dashRange() {
   return $('dPeriod').value === 'custom'
     ? [$('dFrom').value || '0000-01-01', $('dTo').value || '9999-12-31']
     : periodRange($('dPeriod').value);
 }
-function dashRows() {
-  const [f, t] = dashRange();
+function rowsIn(f, t) {
   const F = DIMS.map(([id, field]) => [field, sel(id)]);
   return S.records.filter(r => r.date >= f && r.date <= t && F.every(([k, v]) => !v.length || v.includes(r[k])));
 }
+function dashRows() { return rowsIn(...dashRange()); }
 function resetDash() {
   DIMS.forEach(([id]) => [...$(id).options].forEach(o => o.selected = false));
   $('dPeriod').value = 'thisFY'; dPeriodChange();
@@ -993,13 +1365,14 @@ function periodText() {
 }
 
 /* Tap on a chart → Records showing exactly those cases */
-function drillTo(label, test) {
-  DRILL = { label: label + ' · ' + periodText(), ids: new Set(dashRows().filter(test).map(r => r.id)) };
+function drillTo(label, test, allRecords) {
+  const src = allRecords ? S.records : dashRows();
+  DRILL = { label: allRecords ? label : label + ' · ' + periodText(), ids: new Set(src.filter(test).map(r => r.id)) };
   $('search').value = '';
   go('records'); renderRecords();
 }
 function clearDrill() { DRILL = null; renderRecords(); }
-function nav(s) { if (s === 'more') loadBackupInfo(); if (s === 'records') DRILL = null; if (SEL_MODE) { SEL_MODE = false; SEL.clear(); } go(s); if (s === 'records') renderRecords(); if (s === 'dash') renderDash(); }
+function nav(s) { if (s === 'add' && S.editId && currentScreen !== 'add') resetForm(true); if (s === 'more') loadBackupInfo(); if (s === 'records') DRILL = null; if (SEL_MODE) { SEL_MODE = false; SEL.clear(); } go(s); if (s === 'records') renderRecords(); if (s === 'dash') renderDash(); }
 
 const DRILLS = [];   // drill callbacks for the current render, referenced by index from onclick
 function dr(label, test) { DRILLS.push([label, test]); return `onclick="drillTo(...DRILLS[${DRILLS.length - 1}])"`; }
@@ -1071,6 +1444,7 @@ function card(title, sub, body) {
 function renderDash() {
   if (!$('dTiles')) return;
   DRILLS.length = 0;
+  renderPChips();
   const rows = dashRows();
 
   // active filter chips
@@ -1080,39 +1454,54 @@ function renderDash() {
   const nF = DIMS.filter(([id]) => sel(id).length).length;
   $('dMoreBtn').textContent = nF ? `Filters (${nF})` : 'Filters';
 
-  // KPI tiles — all on Dad's share for shared cases; undecided splits are counted separately
+  // 1. Headline — on my share for shared cases; undecided splits are left out
   const E = r => money(r).earn || 0, G = r => money(r).got || 0, DUE = r => money(r).due;
   const isOpenMine = r => r.status !== 'Written off' && DUE(r) > 0;
-  const nEarn = rows.filter(r => money(r).earn != null).length;
-  const pend = rows.filter(r => money(r).sharePending);
-  const owedTo = sum(rows, r => money(r).owedTo), owedBy = sum(rows, r => money(r).owedBy);
   const billed = sum(rows, E), collected = sum(rows, G);
   const open = rows.filter(isOpenMine), outstanding = sum(open, DUE);
   const od = S.overdueDays, overdue = open.filter(r => age(r) > od), overdueAmt = sum(overdue, DUE);
+  const pr = prevRange(), prev = pr ? rowsIn(pr[0], pr[1]) : null;
+  const delta = (now, before) => {
+    if (!pr) return '';
+    if (!before) return '';
+    const ch = (now - before) / before, up = ch >= 0;
+    return `<span class="delta ${up ? 'up' : 'down'}">${up ? '▲' : '▼'} ${Math.abs(Math.round(ch * 100))}% ${esc(pr[2])}</span>`;
+  };
   $('dTiles').innerHTML = [
-    ['My billing', inr(billed), ''],
-    ['Collected', inr(collected), ''],
-    ['Outstanding', inr(outstanding), dr('Outstanding', isOpenMine)],
-    ['Cases', rows.length, ''],
-    ['Avg fee per case', nEarn ? inr(billed / nEarn) : '—', ''],
-    ['Collection rate', billed ? pct(collected / billed) : '—', ''],
-    [`Overdue ${od}+ days (${overdue.length})`, inr(overdueAmt),
-      overdue.length ? dr(`Overdue ${od}+ days`, r => isOpenMine(r) && age(r) > od) : '', overdueAmt > 0 ? 'alert' : ''],
-    ['Emergency cases', rows.filter(r => r.urgency === 'Emergency').length, ''],
-    ...(rows.some(r => r.shared) ? [['Earnings from shared cases', inr(sum(rows.filter(r => r.shared), E)), dr('Shared cases', r => r.shared)]] : []),
-    ...(pend.length ? [[`Split pending (${pend.length})`, inr(sum(pend, r => r.fee)) + '<small style="font-size:12px;font-weight:400;color:var(--muted)"> fees</small>', dr('Split pending', r => money(r).sharePending)]] : []),
-    ...(S.trackSettlements && (owedTo || owedBy) ? [
-      ['I owe colleagues', inr(owedTo), owedTo ? `onclick="openLedger()"` : ''],
-      ['Colleagues owe me', inr(owedBy), owedBy ? `onclick="openLedger()"` : '']] : [])
-  ].map(([l, v, click, cls]) => `<div class="tile ${click ? 'tap' : ''} ${cls || ''}" ${click}><b>${v}</b><span>${esc(l)}</span></div>`).join('');
+    ['My billing', inr(billed), delta(billed, prev && sum(prev, E)), ''],
+    [`Collected${billed ? ' · ' + Math.round(collected / billed * 100) + '%' : ''}`, inr(collected), delta(collected, prev && sum(prev, G)), ''],
+    [`Outstanding · ${open.length} case${open.length === 1 ? '' : 's'}`, inr(outstanding), '', open.length ? dr('Outstanding', isOpenMine) : ''],
+    [`Over ${od} days · ${overdue.length} case${overdue.length === 1 ? '' : 's'}`, inr(overdueAmt), '',
+      overdue.length ? dr(`Overdue ${od}+ days`, r => isOpenMine(r) && age(r) > od) : '', overdueAmt > 0 ? 'alert' : '']
+  ].map(([l, v, dl, click, cls]) => `<div class="tile ${click ? 'tap' : ''} ${cls || ''}" ${click}><b>${v}</b><span>${esc(l)}</span>${dl}</div>`).join('');
 
   if (!rows.length) {
-    $('dCharts').innerHTML = '<div class="empty">No cases in this period or filter.</div>';
+    $('dCharts').innerHTML = emptyState('No cases in this period', 'Pick another period or clear the filters.');
     return;
   }
   const out = [];
 
-  // 1. Monthly billed vs collected (by surgery month, latest 12 months in range)
+  // 2. Money owed by hospitals, with ageing inside each bar
+  const [a1, a2, a3] = S.ageing;
+  const BK = [[`0–${a1} d`, r => age(r) <= a1, 'var(--o1)'], [`${a1 + 1}–${a2} d`, r => age(r) > a1 && age(r) <= a2, 'var(--o2)'],
+    [`${a2 + 1}–${a3} d`, r => age(r) > a2 && age(r) <= a3, 'var(--o3)'], [`${a3}+ d`, r => age(r) > a3, 'var(--o4)']];
+  const hOpen = open.filter(r => r.collector !== 'Colleague');
+  if (hOpen.length) {
+    const hs = topN(group(hOpen, 'hospital', DUE), 8);
+    const hMax = Math.max(...hs.map(h => h.value), 1);
+    out.push(card('Money owed by hospitals', `${inr(sum(hOpen, DUE))} across ${hOpen.length} case${hOpen.length === 1 ? '' : 's'} · bar shows how old the dues are`,
+      hs.map(h => {
+        const keys = h.keys || [h.key], cr = hOpen.filter(r => keys.includes(r.hospital || '—'));
+        const segs = BK.map(([, t, c]) => [sum(cr.filter(t), DUE), c]).filter(([v]) => v > 0);
+        return `<div class="hrow tap" ${dr('Outstanding at ' + h.label, r => isOpenMine(r) && r.collector !== 'Colleague' && keys.includes(r.hospital || '—'))}>
+          <div class="lb">${esc(h.label)}</div>
+          <div><div class="stack" style="width:${(h.value / hMax * 100).toFixed(1)}%">${segs.map(([v, c]) => `<div style="flex:${v};background:${c}"></div>`).join('')}</div></div>
+          <div class="v">${inr(h.value)}<small>oldest ${Math.max(...cr.map(age))} d</small></div></div>`;
+      }).join('') +
+      `<div class="legend">${BK.map(([l, , c]) => `<span><i style="background:${c}"></i>${l}</span>`).join('')}</div>`));
+  }
+
+  // 3. Trend
   const months = [...new Set(rows.map(r => r.date.slice(0, 7)))].sort().slice(-12);
   const mData = months.map(m => {
     const mr = rows.filter(r => r.date.startsWith(m));
@@ -1121,7 +1510,7 @@ function renderDash() {
   const mMax = Math.max(...mData.map(d => d.billed), 1);
   const multiYear = new Set(months.map(m => m.slice(0, 4))).size > 1;
   window._mData = mData;
-  out.push(card('Billed vs collected by month', 'By month of surgery. Tap a month for its numbers.', `
+  out.push(card('Billed vs collected', 'By month of surgery · tap a month for its numbers', `
     <div class="ymax">${inr(mMax)}</div>
     <div class="vchart">${mData.map((d, i) => `
       <div class="vgrp" data-i="${i}" onclick="pickMonth(${i})">
@@ -1133,124 +1522,78 @@ function renderDash() {
       <span><i style="background:var(--s2)"></i>Collected <em>${inr(collected)}</em></span></div>
     <div class="readout" id="mReadout"></div>`));
 
-  // 2. Outstanding by hospital
-  out.push(card('Outstanding by hospital', `Who owes how much · ${open.length} unpaid cases`,
-    hbars(topN(group(open, 'hospital', DUE), 8), 'var(--s1)', 'hospital', 'Outstanding at')));
-  // make outstanding drill only show unpaid cases
-  DRILLS.forEach(d => { if (d[0].startsWith('Outstanding at')) { const t = d[1]; d[1] = r => isOpenMine(r) && t(r); } });
-
-  // 3. Earnings by hospital / case type / surgeon
+  // 4. Where it comes from
   const byLabel = { hospital: 'Hospital', caseType: 'Case type', surgeon: 'Surgeon' };
-  out.push(card('Earnings by ' + byLabel[EARN_BY].toLowerCase(), 'My billing, largest first', `
-    <div class="seglite">${Object.entries(byLabel).map(([k, l]) =>
-      `<button class="${k === EARN_BY ? 'on' : ''}" onclick="EARN_BY='${k}';renderDash()">${l}</button>`).join('')}</div>
+  out.push(card('Where it comes from', 'My billing, largest first · cases and average fee per row', `
+    <div class="seglite" role="group" aria-label="Group by">${Object.entries(byLabel).map(([k, l]) =>
+      `<button class="${k === EARN_BY ? 'on' : ''}" aria-pressed="${k === EARN_BY}" onclick="EARN_BY='${k}';renderDash()">${l}</button>`).join('')}</div>
     ${hbars(topN(group(rows, EARN_BY, E), 8).map(i => {
       const keys = i.keys || [i.key];
-      const n = rows.filter(r => keys.includes(r[EARN_BY] || '—')).length;
-      return { ...i, note: n + (n === 1 ? ' case' : ' cases') };
+      const n = rows.filter(r => keys.includes(r[EARN_BY] || '—') && money(r).earn != null).length;
+      return { ...i, note: `${n} case${n === 1 ? '' : 's'} · avg ${n ? inr(i.value / n) : '—'}` };
     }), 'var(--s1)', EARN_BY, byLabel[EARN_BY])}`));
 
-  // 4. Ageing of dues
-  const [a1, a2, a3] = S.ageing;
-  const buckets = [
-    [`0–${a1} days`, r => age(r) <= a1, 'var(--o1)'],
-    [`${a1 + 1}–${a2} days`, r => age(r) > a1 && age(r) <= a2, 'var(--o2)'],
-    [`${a2 + 1}–${a3} days`, r => age(r) > a2 && age(r) <= a3, 'var(--o3)'],
-    [`${a3}+ days`, r => age(r) > a3, 'var(--o4)']
-  ];
-  const bItems = buckets.map(([l, t, c]) => {
-    const br = open.filter(t);
-    return { label: l, value: sum(br, DUE), color: c, note: br.length + (br.length === 1 ? ' case' : ' cases'), test: t };
-  });
-  const bMax = Math.max(...bItems.map(i => i.value), 1);
-  out.push(card('Ageing of dues', 'Unpaid amount by days since surgery', bItems.map(i => `
-    <div class="hrow tap" ${dr('Dues ' + i.label, r => isOpenMine(r) && i.test(r))}>
-      <div class="lb">${esc(i.label)}</div>
-      <div><div class="bar" style="width:${(i.value / bMax * 100).toFixed(1)}%;background:${i.color}"></div></div>
-      <div class="v">${inr(i.value)}<small>${esc(i.note)}</small></div></div>`).join('')));
-
-  // 5. Payment status split
-  out.push(card('Payment status', 'Share of cases · amount is my billing for Paid, still due for the rest', share(
-    ['Paid', 'Partially paid', 'Pending', 'Split pending', 'Written off'].map(st => {
-      const sr = rows.filter(r => r.status === st);
-      return { label: st, count: sr.length, amount: st === 'Paid' ? sum(sr, E) : st === 'Split pending' ? sum(sr, r => r.fee) : sum(sr, DUE),
-        color: STATUS_COLOR[st], click: dr('Status: ' + st, r => r.status === st) };
-    }))));
-
-  // 6. Elective vs emergency
-  out.push(card('Elective vs emergency', 'Share of cases · amount is my billing', share(
-    ['Elective', 'Emergency'].map((u, i) => {
-      const ur = rows.filter(r => (r.urgency || 'Elective') === u);
-      return { label: u, count: ur.length, amount: sum(ur, E), color: i ? 'var(--s2)' : 'var(--s1)',
-        click: dr(u, r => (r.urgency || 'Elective') === u) };
-    }))));
-
-  // 6b. Yojana vs private
-  const sParts = ['Private', 'Yojana'].map((sc, i) => {
-    const sr = rows.filter(r => r.scheme === sc);
-    return { label: sc, count: sr.length, amount: sum(sr, E), color: i ? 'var(--s2)' : 'var(--s1)', click: dr(sc, r => r.scheme === sc) };
-  });
-  const noS = rows.filter(r => !r.scheme);
-  if (noS.length) sParts.push({ label: 'Not recorded', count: noS.length, amount: sum(noS, E), color: '#d6d8dc', click: dr('Scheme not recorded', r => !r.scheme) });
-  out.push(card('Yojana vs private', 'Share of cases · amount is my billing', share(sParts)));
-
-  // 6c. Shared vs independent (donut), shared-case summary, by colleague
+  // 5. Case mix
   const shr = rows.filter(r => r.shared), ind = rows.filter(r => !r.shared);
-  if (shr.length) {
-    out.push(card('Shared vs independent', 'Share of cases · amount is my billing', donut([
-      { label: 'Independent', count: ind.length, amount: sum(ind, E), color: 'var(--s1)', click: dr('Independent cases', r => !r.shared) },
-      { label: 'Shared', count: shr.length, amount: sum(shr, E), color: 'var(--s2)', click: dr('Shared cases', r => r.shared) }
-    ], 'shared', shr.length / rows.length)));
-
-    const agreed = shr.filter(r => !money(r).sharePending);
-    const feeA = sum(agreed, r => r.fee), mineA = sum(agreed, E);
-    const took = shr.filter(r => r.roleLabel === 'Took over'), hand = shr.filter(r => r.roleLabel === 'Handed over');
-    out.push(card('Shared cases', `${shr.length} cases · ${agreed.length} with the split agreed`, `
-      <div class="tiles" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:12px">
-        <div class="tile"><b>${feeA ? Math.round(mineA / feeA * 100) + '%' : '—'}</b><span>My average share</span></div>
-        <div class="tile"><b>${inr(mineA)}</b><span>Kept</span></div>
-        <div class="tile"><b>${inr(feeA - mineA)}</b><span>Passed to colleagues</span></div>
-      </div>
-      ${share([
-        { label: 'I took over', count: took.length, amount: sum(took, E), color: 'var(--o2)', click: dr('I took over', r => r.roleLabel === 'Took over') },
-        { label: 'I handed over', count: hand.length, amount: sum(hand, E), color: 'var(--o4)', click: dr('I handed over', r => r.roleLabel === 'Handed over') }
-      ])}`));
-
-    out.push(card('By colleague', 'My billing on cases shared with each colleague', hbars(topN(group(shr, 'coAnaes', E), 8).map(i => {
-      const keys = i.keys || [i.key], cr = shr.filter(r => keys.includes(r.coAnaes || '—'));
-      const to = sum(cr, r => money(r).owedTo), by = sum(cr, r => money(r).owedBy);
-      const bal = !S.trackSettlements ? '' : to && by ? `I owe ${inr(to)} · owes me ${inr(by)}` : to ? `I owe ${inr(to)}` : by ? `Owes me ${inr(by)}` : '';
-      return { ...i, note: cr.length + (cr.length === 1 ? ' case' : ' cases'), sub: bal };
-    }), 'var(--s2)', 'coAnaes', 'Shared with')));
-  }
-
-  // 7. Age groups (ordered, so bars rather than a pie)
   const AGE_GROUPS = [['0–12', 0, 12], ['13–17', 13, 17], ['18–35', 18, 35], ['36–50', 36, 50], ['51–65', 51, 65], ['66+', 66, 999]];
   const hasAge = r => r.age !== '' && r.age != null && !isNaN(r.age);
   const aItems = AGE_GROUPS.map(([l, lo, hi], i) => {
-    const t = r => hasAge(r) && r.age >= lo && (r.age < hi + 1);
+    const t = r => hasAge(r) && r.age >= lo && r.age < hi + 1;
     const ar = rows.filter(t);
     return { label: l, count: ar.length, fees: sum(ar, E), test: t, color: ['var(--o1)', 'var(--o1)', 'var(--o2)', 'var(--o2)', 'var(--o3)', 'var(--o4)'][i] };
   });
   const noAge = rows.filter(r => !hasAge(r));
   if (noAge.length) aItems.push({ label: 'Not recorded', count: noAge.length, fees: sum(noAge, E), test: r => !hasAge(r), color: 'var(--st-off)' });
   const aMax = Math.max(...aItems.map(i => i.count), 1);
-  out.push(card('Patients by age group', 'Number of cases · my billing shown on the right', aItems.map(i => `
-    <div class="hrow tap" ${dr('Age ' + i.label, i.test)}>
-      <div class="lb">${esc(i.label)}${/^\d/.test(i.label) ? ' yrs' : ''}</div>
-      <div><div class="bar" style="width:${(i.count / aMax * 100).toFixed(1)}%;background:${i.color}"></div></div>
-      <div class="v">${i.count} ${i.count === 1 ? 'case' : 'cases'}<small>${inr(i.fees)}</small></div></div>`).join('')));
+  out.push(card('Case mix', `${rows.length} case${rows.length === 1 ? '' : 's'} · amounts are my billing`, `
+    ${shr.length ? donut([
+      { label: 'Independent', count: ind.length, amount: sum(ind, E), color: 'var(--s1)', click: dr('Independent cases', r => !r.shared) },
+      { label: 'Shared', count: shr.length, amount: sum(shr, E), color: 'var(--s2)', click: dr('Shared cases', r => r.shared) }
+    ], 'shared', shr.length / rows.length) : ''}
+    <div class="minih">Elective vs emergency</div>
+    ${share(['Elective', 'Emergency'].map((u, i) => {
+      const ur = rows.filter(r => (r.urgency || 'Elective') === u);
+      return { label: u, count: ur.length, amount: sum(ur, E), color: i ? 'var(--s2)' : 'var(--s1)', click: dr(u, r => (r.urgency || 'Elective') === u) };
+    }))}
+    <div class="minih">Yojana vs private</div>
+    ${share(['Private', 'Yojana', ''].map((sc, i) => {
+      const sr = rows.filter(r => (r.scheme || '') === sc);
+      return { label: sc || 'Not recorded', count: sr.length, amount: sum(sr, E), color: ['var(--s1)', 'var(--s2)', 'var(--st-off)'][i], click: dr(sc || 'Scheme not recorded', r => (r.scheme || '') === sc) };
+    }))}
+    <div class="minih">Age groups</div>
+    ${aItems.map(i => `
+      <div class="hrow tap" ${dr('Age ' + i.label, i.test)}>
+        <div class="lb">${esc(i.label)}${/^\d/.test(i.label) ? ' yrs' : ''}</div>
+        <div><div class="bar" style="width:${(i.count / aMax * 100).toFixed(1)}%;background:${i.color}"></div></div>
+        <div class="v">${i.count}<small>${inr(i.fees)}</small></div></div>`).join('')}`));
 
-  // 8. Gender split
-  const GEN = S.lists.genders && S.lists.genders.length ? S.lists.genders : ['Male', 'Female', 'Other'];
-  const gCol = ['var(--s1)', 'var(--s2)', 'var(--st-off)'];
-  const gParts = GEN.map((g, i) => {
-    const gr = rows.filter(r => r.gender === g);
-    return { label: g, count: gr.length, amount: sum(gr, E), color: gCol[i] || 'var(--st-off)', click: dr(g, r => r.gender === g) };
-  });
-  const noG = rows.filter(r => !r.gender);
-  if (noG.length) gParts.push({ label: 'Not recorded', count: noG.length, amount: sum(noG, E), color: '#d6d8dc', click: dr('Gender not recorded', r => !r.gender) });
-  out.push(card('Gender', 'Share of cases · amount is my billing', share(gParts)));
+  // 6. Colleagues (shared cases)
+  if (shr.length) {
+    const agreed = shr.filter(r => !money(r).sharePending);
+    const feeA = sum(agreed, r => r.fee), mineA = sum(agreed, E);
+    const took = shr.filter(r => r.roleLabel === 'Took over'), hand = shr.filter(r => r.roleLabel === 'Handed over');
+    const pendS = shr.filter(r => money(r).sharePending);
+    const to = sum(shr, r => money(r).owedTo), by = sum(shr, r => money(r).owedBy);
+    out.push(card('Colleagues', `${shr.length} shared case${shr.length === 1 ? '' : 's'} · ${agreed.length} with the split agreed`, `
+      <div class="tiles" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:12px">
+        <div class="tile"><b>${feeA ? Math.round(mineA / feeA * 100) + '%' : '—'}</b><span>My average share</span></div>
+        <div class="tile"><b>${inr(mineA)}</b><span>Kept</span></div>
+        <div class="tile"><b>${inr(feeA - mineA)}</b><span>Passed on</span></div>
+      </div>
+      ${share([
+        { label: 'I took over', count: took.length, amount: sum(took, E), color: 'var(--o2)', click: dr('I took over', r => r.roleLabel === 'Took over') },
+        { label: 'I handed over', count: hand.length, amount: sum(hand, E), color: 'var(--o4)', click: dr('I handed over', r => r.roleLabel === 'Handed over') }
+      ])}
+      ${pendS.length ? `<button type="button" class="remind" style="margin-top:12px" ${dr('Split pending', r => money(r).sharePending)}><span>Splits to agree</span><b class="gold">${pendS.length} case${pendS.length === 1 ? '' : 's'} · ${inr(sum(pendS, r => r.fee))} fees</b></button>` : ''}
+      <div class="minih">By colleague</div>
+      ${hbars(topN(group(shr, 'coAnaes', E), 8).map(i => {
+        const keys = i.keys || [i.key], cr = shr.filter(r => keys.includes(r.coAnaes || '—'));
+        const t2 = sum(cr, r => money(r).owedTo), b2 = sum(cr, r => money(r).owedBy);
+        const bal = !S.trackSettlements ? '' : t2 && b2 ? `I owe ${inr(t2)} · owes me ${inr(b2)}` : t2 ? `I owe ${inr(t2)}` : b2 ? `Owes me ${inr(b2)}` : '';
+        return { ...i, note: cr.length + (cr.length === 1 ? ' case' : ' cases'), sub: bal };
+      }), 'var(--s2)', 'coAnaes', 'Shared with')}
+      ${S.trackSettlements && (to || by) ? `<button type="button" class="btn ghost" style="margin-top:12px" onclick="openLedger()">Colleague balances · I owe ${inr(to)} · owed ${inr(by)}</button>` : ''}`));
+  }
 
   $('dCharts').innerHTML = out.join('');
 }
@@ -1345,12 +1688,19 @@ async function confirmPay() {
   if (!p.mode) return toast('Pick a payment mode', true);
   if (!p.date) return toast('Pick a payment date', true);
   $('payGo').disabled = true; busy(true, 'Saving payment…');
+  // what each affected hospital owed before, to spot a hospital that is now fully clear
+  const hospDue = () => { const m = {}; S.records.forEach(r => { if (r.status !== 'Written off' && r.collector !== 'Colleague' && money(r).due > 0) { m[r.hospital] = m[r.hospital] || { due: 0, n: 0 }; m[r.hospital].due += money(r).due; m[r.hospital].n++; } }); return m; };
+  const hosps = new Set(p.ids.map(byId).filter(Boolean).map(r => r.hospital));
+  const before = hospDue();
   try {
     const d = await call('markPaid', p);
     closePay();
     SEL_MODE = false; SEL.clear();
     apply(d);
-    toast(d.updated === 1 ? 'Payment saved' : `${d.updated} cases marked paid`);
+    const after = hospDue();
+    const cleared = [...hosps].filter(h => before[h] && !after[h]);
+    if (cleared.length) showCleared(cleared, before);
+    else toast(d.updated === 1 ? 'Payment saved' : `${d.updated} cases marked paid`, false, { title: 'Payment recorded', pose: 'hello' });
   } catch (e) {
     toast(e.message || String(e), true);
   } finally {
@@ -1540,8 +1890,9 @@ async function restoreTrash(ids) {
   finally { busy(false); }
 }
 let CF = null;
-function askCf(title, text, btn, fn) {
+function askCf(title, text, btn, fn, safe) {
   CF = fn; $('cfTitle').textContent = title; $('cfSum').textContent = text; $('cfGo').textContent = btn;
+  $('cfGo').className = 'btn ' + (safe ? 'primary' : 'dangerfill');
   $('cfModal').classList.add('on');
 }
 function closeCf() { $('cfModal').classList.remove('on'); CF = null; }
@@ -1600,6 +1951,110 @@ function showFile(title, text, url) {
   $('fileTitle').textContent = title; $('fileSum').textContent = text; $('fileLink').href = url; $('fileLink').textContent = 'Open in Google Drive';
   $('fileModal').classList.add('on');
 }
+function showCleared(hs, before) {
+  const amt = sum(hs, h => before[h].due), n = sum(hs, h => before[h].n);
+  $('clearSui').innerHTML = sui('clear', 110);
+  $('clearTitle').textContent = hs.length === 1 ? `All clear at ${hs[0]}` : `All clear at ${hs.length} hospitals`;
+  $('clearSum').textContent = `${inr(amt)} received for ${n} case${n === 1 ? '' : 's'}. Nothing outstanding there now.`;
+  $('clearModal').classList.add('on');
+}
+
+/* ---------- exports (Insights → Export) ---------- */
+function openExport() {
+  const rows = dashRows();
+  $('expSum').textContent = `${rows.length} case${rows.length === 1 ? '' : 's'} · ${periodText()}${DIMS.some(([id]) => sel(id).length) ? ' · with filters' : ''}`;
+  $('expFyLbl').textContent = `Income by month and hospital for ${fyLabel(fyForExport())}`;
+  $('expModal').classList.add('on');
+}
+// FY to export: the FY of the selected period's start (all time / custom → current FY)
+function fyForExport() {
+  const p = $('dPeriod').value;
+  const start = p === 'lastFY' ? periodRange('lastFY')[0] : periodRange('thisFY')[0];
+  return +start.slice(0, 4);
+}
+function fyLabel(y) { return `FY ${y}–${String((y + 1) % 100).padStart(2, '0')}`; }
+async function doExport(kind) {
+  $('expModal').classList.remove('on');
+  const rows = dashRows();
+  if (kind === 'cases') {
+    if (!rows.length) return toast('No cases in this view to export', true);
+    busy(true, `Exporting ${rows.length} cases…`);
+    try {
+      const f = await call('exportCases', rows.map(r => r.id));
+      showFile('Excel file ready', `${f.count} cases saved as "${f.name}.xlsx" in Drive › Case Tracker Exports.`, f.url);
+    } catch (e) { toast(e.message || String(e), true); } finally { busy(false); }
+    return;
+  }
+  let name, sheets;
+  if (kind === 'summary') {
+    if (!rows.length) return toast('No cases in this view to export', true);
+    name = 'Summary ' + periodText();
+    sheets = summaryTables(rows, periodText());
+  } else {
+    const y = fyForExport(), fs = iso(new Date(y, S.fyStartMonth - 1, 1)), fe = iso(new Date(y + 1, S.fyStartMonth - 1, 0));
+    const fr = S.records.filter(r => r.date >= fs && r.date <= fe);
+    if (!fr.length) return toast(`No cases in ${fyLabel(y)}`, true);
+    name = 'CA summary ' + fyLabel(y);
+    sheets = fyTables(fr, y);
+  }
+  busy(true, 'Preparing Excel…');
+  try {
+    const f = await call('exportTables', name, sheets);
+    showFile('Excel file ready', `"${f.name}.xlsx" saved in Drive › Case Tracker Exports.`, f.url);
+  } catch (e) { toast(e.message || String(e), true); } finally { busy(false); }
+}
+const R0 = n => Math.round(Number(n) || 0);
+function summaryTables(rows, label) {
+  const E = r => money(r).earn || 0, G = r => money(r).got || 0, D = r => money(r).due;
+  const by = (key, keyLabel) => {
+    const m = {};
+    rows.forEach(r => { const k = (typeof key === 'function' ? key(r) : r[key]) || '—'; m[k] = m[k] || []; m[k].push(r); });
+    return [[keyLabel, 'Cases', 'My billing (₹)', 'Collected (₹)', 'Outstanding (₹)', 'Avg fee (₹)']].concat(
+      Object.entries(m).sort((a, b) => sum(b[1], E) - sum(a[1], E)).map(([k, rs]) => {
+        const n = rs.filter(r => money(r).earn != null).length;
+        return [k, rs.length, R0(sum(rs, E)), R0(sum(rs, G)), R0(sum(rs, D)), n ? R0(sum(rs, E) / n) : ''];
+      }));
+  };
+  const [a1, a2, a3] = S.ageing;
+  const open = rows.filter(r => r.status !== 'Written off' && D(r) > 0);
+  const ageRows = {};
+  open.forEach(r => { const k = r.collector === 'Colleague' ? (r.coAnaes || 'Colleague') + ' (colleague)' : r.hospital; ageRows[k] = ageRows[k] || [0, 0, 0, 0, 0];
+    const a = age(r), i = a <= a1 ? 0 : a <= a2 ? 1 : a <= a3 ? 2 : 3; ageRows[k][i] += D(r); ageRows[k][4] += D(r); });
+  const months = by(r => r.date.slice(0, 7), 'Month');
+  months.splice(1, months.length - 1, ...months.slice(1).sort((a, b) => String(a[0]).localeCompare(String(b[0]))));
+  return [
+    { name: 'Overview', rows: [['Case Tracker summary'], ['Period', label], ['Cases', rows.length], ['My billing (₹)', R0(sum(rows, E))],
+      ['Collected (₹)', R0(sum(rows, G))], ['Outstanding (₹)', R0(sum(rows, D))],
+      ['Split pending (cases)', rows.filter(r => money(r).sharePending).length], ['Note', 'Shared cases count only my share; undecided splits are excluded.']] },
+    { name: 'By month', rows: months },
+    { name: 'By hospital', rows: by('hospital', 'Hospital') },
+    { name: 'By case type', rows: by('caseType', 'Case type') },
+    { name: 'By colleague', rows: by(r => r.shared ? r.coAnaes : '(not shared)', 'Colleague') },
+    { name: 'Dues ageing', rows: [['Owed by', `0–${a1} d (₹)`, `${a1 + 1}–${a2} d (₹)`, `${a2 + 1}–${a3} d (₹)`, `${a3}+ d (₹)`, 'Total (₹)']]
+        .concat(Object.entries(ageRows).sort((a, b) => b[1][4] - a[1][4]).map(([k, v]) => [k].concat(v.map(R0)))) }
+  ];
+}
+function fyTables(rows, y) {
+  const E = r => money(r).earn || 0, G = r => money(r).got || 0, D = r => money(r).due;
+  const ms = [];
+  for (let i = 0; i < 12; i++) { const d = new Date(y, S.fyStartMonth - 1 + i, 1); ms.push(iso(d).slice(0, 7)); }
+  const monthRows = ms.map(m => { const rs = rows.filter(r => r.date.startsWith(m));
+    return [MON[+m.slice(5) - 1] + ' ' + m.slice(0, 4), rs.length, R0(sum(rs, E)), R0(sum(rs, G))]; });
+  const hm = {};
+  rows.forEach(r => { (hm[r.hospital] = hm[r.hospital] || []).push(r); });
+  const shr = rows.filter(r => r.shared).sort((a, b) => a.date.localeCompare(b.date));
+  return [
+    { name: 'Income by month', rows: [['Month', 'Cases', 'My billing (₹)', 'Received (₹)']].concat(monthRows,
+      [['Total', rows.length, R0(sum(rows, E)), R0(sum(rows, G))]]) },
+    { name: 'Income by hospital', rows: [['Hospital', 'Cases', 'My billing (₹)', 'Received (₹)', 'Outstanding (₹)']].concat(
+      Object.entries(hm).sort((a, b) => sum(b[1], E) - sum(a[1], E)).map(([h, rs]) => [h, rs.length, R0(sum(rs, E)), R0(sum(rs, G)), R0(sum(rs, D))])) },
+    { name: 'Shared cases', rows: [['Date', 'Case ID', 'Hospital', 'Colleague', 'Role', 'Collected by', 'Case fee (₹)', 'My share (₹)']].concat(
+      shr.map(r => [r.date, r.id, r.hospital, r.coAnaes, r.roleLabel, r.collector, R0(r.fee), money(r).earn == null ? 'Split pending' : R0(money(r).earn)])) },
+    { name: 'Notes', rows: [[fyLabel(y) + ' income summary'], ['Billing basis', 'Fees billed for cases done in the year; shared cases at my share only.'],
+      ['Received', 'Amounts received to date for those cases (by case date, not payment date).'], ['Patient names', 'Not included.']] }
+  ];
+}
+
 async function exportView() {
   if (!VIEW.length) return toast('No cases in this view to export', true);
   busy(true, `Exporting ${VIEW.length} cases…`);
@@ -1621,7 +2076,7 @@ function askStatement() {
       $('fileLink').textContent = r.folder ? 'Open the statements folder' : 'Open the PDF';
     } catch (e) { toast(e.message || String(e), true); }
     finally { busy(false); }
-  });
+  }, true);
 }
 async function doBackup() {
   busy(true, 'Backing up…');
@@ -1637,18 +2092,22 @@ async function loadBackupInfo() {
 }
 
 /* ---------- navigation ---------- */
-let currentScreen = 'add';
-const TITLES = { add: 'Add case', records: 'Records', dash: 'Dashboard', more: 'More', trash: 'Trash', lists: 'Manage lists', ledger: 'Colleague balances' };
+let currentScreen = 'home';
+const TITLES = { home: 'Home', add: 'New case', records: 'Records', dash: 'Insights', more: 'More', trash: 'Trash', lists: 'Manage lists', ledger: 'Colleague balances' };
 function setTitle(t) { $('title').textContent = t; }
 function go(s, title) {
   currentScreen = s;
   document.querySelectorAll('.screen').forEach(x => x.classList.toggle('on', x.id === 's-' + s));
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.s === (['trash', 'lists', 'ledger'].includes(s) ? 'more' : s)));
   setTitle(title || (s === 'add' && S.editId ? 'Edit ' + S.editId : TITLES[s]));
+  $('hdr').classList.toggle('home', s === 'home');
+  if (s === 'home') renderHome();
   if (typeof updateSelUI === 'function' && $('selBtn')) updateSelUI();
   window.scrollTo(0, 0);
 }
 
+window.addEventListener('scroll', () => $('hdr').classList.toggle('scrolled', window.scrollY > 4), { passive: true });
+initAppearance();
 load();
 </script>
 </body>

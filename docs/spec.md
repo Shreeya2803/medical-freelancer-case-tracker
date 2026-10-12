@@ -43,10 +43,13 @@ A Google Sheet holds the data, Apps Script serves a mobile web app, and only the
 
 | Screen | Purpose |
 |---|---|
-| Add / Edit case | Entry form; edit mode adds Delete |
-| Records | Search and filters; Mark paid; Select → settle or delete in bulk; Export |
-| Dashboard | KPI tiles, charts and filters; tapping a chart opens the matching cases |
-| More | Manage lists, Colleague balances, Trash, Send dues statement now, Back up now, Refresh |
+| Home (first screen) | Greeting, waiting to be paid, billed and collected this month, Log a case, gentle reminders, recent cases |
+| New / Edit case | Entry form with one-tap gender, urgency and hospital chips; edit mode adds Delete. Saving a new case returns to Home; saving an edit returns to Records |
+| Records | Search; period (including custom dates), hospital and status filters; Mark paid; Select → settle or delete in bulk; Export |
+| Insights | Period chips (including custom), headline tiles with change vs the previous period, charts and filters; tapping a chart opens the matching cases; Export |
+| More | Appearance (Auto / Light / Dark, Sui on/off), Manage lists, Colleague balances, Trash, Send dues statement now, Back up now, Refresh |
+
+Navigation: Home · Records · **+** (new case) · Insights · More.
 
 ## Rules
 
@@ -62,6 +65,10 @@ A Google Sheet holds the data, Apps Script serves a mobile web app, and only the
 | Backup | Monthly trigger plus a button: full workbook as .xlsx in Drive, newest 12 kept |
 | Dues statement | 1st of each month (~9 am) plus a button: PDF of what each hospital owes (colleague-collected cases excluded), emailed with the PDF attached; optional per-hospital PDFs; optional WhatsApp totals via CallMeBot (no patient names) |
 | Drive layout | `Case Tracker Backups/` (flat), `Case Tracker Exports/<year>/`, `Case Tracker Statements/<year>/` (a dated subfolder per send only when per-hospital PDFs are on) |
+| Comparison deltas | This month vs the same days last month; last month vs the month before; this FY vs the same point last FY; last FY vs the FY before; custom vs the same number of days just before; all time has none |
+| Dues ageing | Outstanding by hospital in 0–30 / 31–60 / 61–90 / 90+ day buckets (bucket edges from Settings); colleague-collected cases excluded |
+| Exports | Cases: the filtered rows. Summary: one tab each for overview, month, hospital, case type, colleague, dues ageing. FY summary for CA: income by month and hospital, shared cases, notes; no patient names. Files go to `Case Tracker Exports/<year>/` |
+| Appearance | Theme and Sui are stored per device in the browser; nothing is written to the Sheet |
 | Access | `checkAccess_()` allows only the Settings emails; the Sheet's own sharing is the second lock |
 | Concurrency | All writes take a script lock |
 
@@ -69,7 +76,7 @@ A Google Sheet holds the data, Apps Script serves a mobile web app, and only the
 
 | Function | Called from |
 |---|---|
-| `getInitData`, `saveCase`, `markPaid`, `setSplit`, `settleColleague`, `deleteCases`, `restoreCases`, `getTrash`, `purgeTrash`, `listUpdate`, `exportCases`, `backupNow`, `getBackupInfo`, `sendStatementNow` | The app |
+| `getInitData`, `saveCase`, `markPaid`, `setSplit`, `settleColleague`, `deleteCases`, `restoreCases`, `getTrash`, `purgeTrash`, `listUpdate`, `exportCases`, `exportTables`, `backupNow`, `getBackupInfo`, `sendStatementNow` | The app |
 | `setupSheet`, `installTriggers`, `testWhatsApp` | Run from the editor |
 | `migrateAddAgeGender`, `migrateAddCaseFields`, `migrateAddSharedCases` | Only for sheets created before those columns existed |
 | `purgeOldTrash`, `monthlyBackup`, `monthlyStatement` | Triggers |

@@ -611,6 +611,42 @@ function exportCases(ids) {
   return { url: file.getUrl(), name: file.getName(), count: rows.length };
 }
 
+// Writes summary tables built in the app (Insights → Export) as one .xlsx with a tab per table.
+// sheets = [{ name: 'By month', rows: [[header…], [values…], …] }, …]
+function exportTables(name, sheets) {
+  checkAccess_();
+  name = String(name || 'Export').replace(/[\\/:*?"<>|]/g, '').slice(0, 80).trim() || 'Export';
+  if (!Array.isArray(sheets) || !sheets.length || sheets.length > 12) throw new Error('Nothing to export.');
+  const clean = sheets.map((sh, i) => {
+    const rows = Array.isArray(sh.rows) ? sh.rows.slice(0, 20000) : [];
+    const width = Math.max(1, ...rows.map(r => (Array.isArray(r) ? r.length : 0)));
+    return {
+      name: String(sh.name || 'Sheet ' + (i + 1)).replace(/[\[\]\\/:*?]/g, '').slice(0, 30) || 'Sheet ' + (i + 1),
+      rows: rows.map(r => {
+        const a = (Array.isArray(r) ? r : []).slice(0, 40).map(v => (typeof v === 'number' && isFinite(v)) ? v : String(v == null ? '' : v).slice(0, 500));
+        while (a.length < width) a.push('');
+        return a;
+      })
+    };
+  }).filter(sh => sh.rows.length);
+  if (!clean.length) throw new Error('Nothing to export.');
+  const tz = ss_().getSpreadsheetTimeZone();
+  const full = name + ' ' + Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd HHmm');
+  const tmp = SpreadsheetApp.create(full);
+  clean.forEach((sh, i) => {
+    const ws = i === 0 ? tmp.getSheets()[0].setName(sh.name) : tmp.insertSheet(sh.name);
+    ws.getRange(1, 1, sh.rows.length, sh.rows[0].length).setValues(sh.rows);
+    ws.getRange(1, 1, 1, sh.rows[0].length).setFontWeight('bold').setBackground('#234B46').setFontColor('#ffffff');
+    ws.setFrozenRows(1);
+    ws.autoResizeColumns(1, sh.rows[0].length);
+  });
+  SpreadsheetApp.flush();
+  const folder = subfolder_(folder_('Case Tracker Exports'), Utilities.formatDate(new Date(), tz, 'yyyy'));
+  const file = folder.createFile(xlsxBlob_(tmp.getId(), full));
+  DriveApp.getFileById(tmp.getId()).setTrashed(true);
+  return { url: file.getUrl(), name: full };
+}
+
 // Full copy of the workbook as .xlsx in the backup folder. Keeps the latest 12.
 function backupNow() {
   checkAccess_();
@@ -661,7 +697,7 @@ function writeXlsx_(name, rows, folder) {
   const tmp = SpreadsheetApp.create(name);
   const sh = tmp.getSheets()[0].setName('Cases');
   sh.getRange(1, 1, rows.length, rows[0].length).setValues(rows);
-  sh.getRange(1, 1, 1, rows[0].length).setFontWeight('bold').setBackground('#1f4e78').setFontColor('#ffffff');
+  sh.getRange(1, 1, 1, rows[0].length).setFontWeight('bold').setBackground('#234B46').setFontColor('#ffffff');
   if (rows.length > 1) {
     sh.getRange(2, COL.date, rows.length - 1, 1).setNumberFormat('dd-mmm-yyyy');
     sh.getRange(2, COL.payDate, rows.length - 1, 1).setNumberFormat('dd-mmm-yyyy');

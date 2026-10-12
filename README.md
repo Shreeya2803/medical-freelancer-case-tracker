@@ -7,15 +7,22 @@ Built for a freelance anaesthesiologist; it suits any doctor billing per case ac
 **Cost: ₹0.** It runs entirely on a Google account: Google Sheets is the database, Google Apps Script is the server and the app, and the data can be downloaded as Excel at any time.
 
 <p>
-  <img src="docs/screenshots/1-add-case.png" width="24%" alt="Add case screen">
-  <img src="docs/screenshots/2-dashboard.png" width="24%" alt="Dashboard">
-  <img src="docs/screenshots/4-records.png" width="24%" alt="Records">
-  <img src="docs/screenshots/5-mark-paid.png" width="24%" alt="Mark paid">
+  <img src="docs/screenshots/01-home.png" width="24%" alt="Home">
+  <img src="docs/screenshots/02-add-case.png" width="24%" alt="New case">
+  <img src="docs/screenshots/04-insights.png" width="24%" alt="Insights">
+  <img src="docs/screenshots/08-records-custom-dates.png" width="24%" alt="Records with custom dates">
 </p>
 <p>
-  <img src="docs/screenshots/7-shared-case.png" width="24%" alt="Shared case entry">
-  <img src="docs/screenshots/8-colleague-balances.png" width="24%" alt="Colleague balances">
-  <img src="docs/screenshots/9-shared-vs-independent.png" width="24%" alt="Shared vs independent donut">
+  <img src="docs/screenshots/05-insights-dues.png" width="24%" alt="Money owed by hospitals, with ageing">
+  <img src="docs/screenshots/07-export.png" width="24%" alt="Export options">
+  <img src="docs/screenshots/10-all-clear.png" width="24%" alt="All clear moment">
+  <img src="docs/screenshots/11-shared-case.png" width="24%" alt="Shared case entry">
+</p>
+<p>
+  <img src="docs/screenshots/13-home-dark.png" width="24%" alt="Home, dark mode">
+  <img src="docs/screenshots/14-insights-dark.png" width="24%" alt="Insights, dark mode">
+  <img src="docs/screenshots/15-add-dark.png" width="24%" alt="New case, dark mode">
+  <img src="docs/screenshots/12-colleague-balances.png" width="24%" alt="Colleague balances">
 </p>
 
 *Screenshots use made-up demo data.*
@@ -24,11 +31,14 @@ Built for a freelance anaesthesiologist; it suits any doctor billing per case ac
 
 | Area | What it does |
 |---|---|
-| **Add case** | Date, patient name, age, gender, IP/UHID, hospital, surgeon, case type, anaesthesia type, case description, elective/emergency, Yojana/private, risk notes, fee. Dropdowns learn new hospitals, surgeons and descriptions as they are typed. Suggests the last fee charged for the same hospital and case type. |
-| **Shared cases** | For cases taken over from, or handed over to, another anaesthesiologist. Record who collects from the hospital and your share; leave the share blank until the split is agreed ("Split pending"). An optional ledger (Settings: *Track colleague settlements*) shows who owes whom per colleague, with one-tap settle. Earnings everywhere count only your share. The dashboard adds a shared-vs-independent donut, a shared-case summary (average share, kept vs passed on, took over vs handed over) and earnings by colleague. |
+| **Home** | Greeting, total waiting to be paid (tap to see those cases), billed and collected this month, one-tap **Log a case**, gentle reminders (hospitals with old dues, splits still to agree) and recent cases. |
+| **Add case** | Date, patient name, age, gender, IP/UHID, hospital, surgeon, case type, anaesthesia type, case description, elective/emergency, Yojana/private, risk notes, fee. Gender and elective/emergency are one-tap buttons; the five most-used hospitals are chips, with the rest under *More*. Dropdowns learn new hospitals, surgeons and descriptions as they are typed. Suggests the last fee charged for the same hospital and case type. |
+| **Shared cases** | For cases taken over from, or handed over to, another anaesthesiologist. Record who collects from the hospital and your share; leave the share blank until the split is agreed ("Split pending"). An optional ledger (Settings: *Track colleague settlements*) shows who owes whom per colleague, with one-tap settle. Earnings everywhere count only your share. |
 | **Risk notes** | Tag-style input. Every note typed becomes vocabulary and is suggested again when its letters are typed, matching anywhere in the word. |
-| **Records** | Search, filters, edit, one-tap **Mark paid** (full or partial), multi-select to settle a hospital's pending cases in one go, **Export** of the filtered view to Excel. |
-| **Dashboard** | Billed, collected, outstanding, collection rate, overdue dues; charts by month, hospital, case type, surgeon, ageing of dues, payment status, elective/emergency, Yojana/private, age group and gender. Every chart filters by period, hospital, case type, surgeon, status, payment mode and more; tapping a bar opens those cases. |
+| **Records** | Search; filters by period (including **custom dates**), hospital and status; edit; one-tap **Mark paid** (full or partial); multi-select to settle a hospital's pending cases in one go; **Export** of the filtered view to Excel. |
+| **Insights** | Period chips (this month, last month, this FY, last FY, all time, **custom**). Four headline tiles (billed, collected, outstanding, over 60 days) with ▲/▼ against the previous comparable period. Money owed by each hospital with ageing bars; billed vs collected by month; where earnings come from (hospital, case type or surgeon, with case count and average fee); case mix (shared vs independent, elective/emergency, Yojana/private, age groups); colleagues. Filters for hospital, case type, surgeon and more; tapping a bar opens those cases. |
+| **Exports** | From Insights: **Cases** (every case in view), **Summary** (by month, hospital, case type, colleague and dues ageing, one tab each), **FY summary for your CA** (income by month and hospital, no patient names), and the **Dues statement** PDF. Excel files are filed in Drive by year. |
+| **Look and feel** | "Ivory & Sage" theme with a matching **dark mode** (Auto / Light / Dark under More). **Sui**, a small syringe mascot, appears only at moments: the Home greeting, after a case is saved, when a hospital's dues are cleared, and on empty screens. It can be switched off. Both settings are saved per device. |
 | **Safe deletes** | Select and delete any filtered set of cases. They go to Trash for 30 days, with Undo, Restore and a typed confirmation for large deletes. |
 | **Dues statement** | On the 1st of each month (or on demand from More), a PDF of what each hospital owes is emailed and saved to Drive. Optional: one ready-to-forward PDF per hospital, and a totals-only WhatsApp summary via the free [CallMeBot](https://www.callmebot.com/blog/free-api-whatsapp-messages/) personal API. |
 | **Backups** | One-tap and automatic monthly Excel backups to Google Drive (newest 12 kept). |
@@ -38,7 +48,7 @@ Built for a freelance anaesthesiologist; it suits any doctor billing per case ac
 
 ```
 iPhone / Android browser  ──►  Google Apps Script web app  ──►  Google Sheet (Cases · Lists · Trash · Settings)
-   (home-screen shortcut)        Code.gs + Index.html               └─► Google Drive: Excel exports + monthly backups
+   (home-screen shortcut)        Code.gs + Index.html               └─► Google Drive: Excel exports, monthly backups, dues statements
 ```
 
 | Layer | Tool |
@@ -46,7 +56,7 @@ iPhone / Android browser  ──►  Google Apps Script web app  ──►  Goog
 | Database | Google Sheets ([template](template/case_tracker_backend.xlsx)) |
 | Server | Google Apps Script ([`src/Code.gs`](src/Code.gs)) |
 | App (all screens) | One HTML file served by Apps Script ([`src/Index.html`](src/Index.html)), no frameworks |
-| Scheduled jobs | Apps Script triggers: nightly Trash clean-up, monthly backup |
+| Scheduled jobs | Apps Script triggers: nightly Trash clean-up, monthly backup, monthly dues statement |
 
 ## Setup (about 20 minutes)
 
@@ -58,6 +68,8 @@ iPhone / Android browser  ──►  Google Apps Script web app  ──►  Goog
 6. **Install on the phone.** Open the URL in Safari or Chrome, sign in, and tap *Share → Add to Home Screen*.
 
 To update later, paste the new code, then go to **Deploy → Manage deployments → Edit → New version**. The URL stays the same.
+
+**Upgrading from v1.x to v2.0:** replace both `Code.gs` and `Index.html` and deploy a new version. The Sheet does not change and no migration is needed. The first Summary or FY export may ask to approve Drive access again.
 
 > **iPhone tip:** if Safari shows *"Sorry, unable to open the file at present"*, more than one Google account is signed in. Sign out of all accounts and sign in with just the one listed in Settings.
 
